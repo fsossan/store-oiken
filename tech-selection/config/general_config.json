@@ -1,0 +1,110 @@
+{
+  "PU_values": {
+    "Sb": 100000,
+    "Vb": 230,
+    "Vsl": 1
+  },
+  "demand_level": {
+    "demand_factor": 0.06,
+    "generation_factor": 0.7
+  },
+  "network_properties": {
+    "n_of_phases": 1
+  },
+  "visualization": {
+    "show_original_node_ids": false,
+    "plot_topology": true
+  },
+  "scenarios": {
+    "sc1_2030": {
+      "year": 2030,
+      "SFOE_scenario": "Scénario 1 - Référence (ZÉRO Base)",
+      "PV_national_MW": 9770,
+      "wind_national_MW": 310,
+      "EV_national_thousands": 930,
+      "heatpump_national_thousands": 680,
+      "total_installed_capacity_MW": 29400,
+      "total_demand_TWh": 60.35,
+      "population_national": 9462900,
+      "population_valais": 379098,
+      "population_sion_sierre": 105042,
+      "notes": "Reference scenario - ZERO Base, balanced energy transition"
+    },
+    "sc2_2030": {
+      "year": 2030,
+      "SFOE_scenario": "Scénario 2 - Divergence (ZÉRO A)",
+      "PV_national_MW": 7650,
+      "wind_national_MW": 180,
+      "EV_national_thousands": 980,
+      "heatpump_national_thousands": 710,
+      "total_installed_capacity_MW": 27140,
+      "total_demand_TWh": 63.44,
+      "population_national": 9462900,
+      "population_valais": 379098,
+      "population_sion_sierre": 105042,
+      "notes": "Divergence scenario - lower PV deployment, higher demand"
+    },
+    "sc3_2030": {
+      "year": 2030,
+      "SFOE_scenario": "Scénario 3 - Couplage des secteurs (ZÉRO B)",
+      "PV_national_MW": 12210,
+      "wind_national_MW": 310,
+      "EV_national_thousands": 870,
+      "heatpump_national_thousands": 610,
+      "total_installed_capacity_MW": 32110,
+      "total_demand_TWh": 58.74,
+      "population_national": 9462900,
+      "population_valais": 379098,
+      "population_sion_sierre": 105042,
+      "notes": "Sector coupling scenario - higher PV, gas peakers"
+    },
+    "sc1_2040": {
+      "year": 2040,
+      "SFOE_scenario": "Scénario 1 - Référence (ZÉRO Base)",
+      "PV_national_MW": 24070,
+      "wind_national_MW": 1150,
+      "EV_national_thousands": 2940,
+      "heatpump_national_thousands": 1010,
+      "total_installed_capacity_MW": 45540,
+      "total_demand_TWh": 67.15,
+      "population_national": 9970300,
+      "population_valais": 399377,
+      "population_sion_sierre": 110103,
+      "notes": "Reference scenario 2040 - ambitious PV deployment"
+    },
+    "sc2_2040": {
+      "year": 2040,
+      "SFOE_scenario": "Scénario 2 - Divergence (ZÉRO A)",
+      "PV_national_MW": 10100,
+      "wind_national_MW": 180,
+      "EV_national_thousands": 3230,
+      "heatpump_national_thousands": 1120,
+      "total_installed_capacity_MW": 30490,
+      "total_demand_TWh": 73.86,
+      "population_national": 9970300,
+      "population_valais": 399377,
+      "population_sion_sierre": 110103,
+      "notes": "Divergence 2040 - lower PV, highest electricity demand"
+    },
+    "sc3_2040": {
+      "year": 2040,
+      "SFOE_scenario": "Scénario 3 - Couplage des secteurs (ZÉRO B)",
+      "PV_national_MW": 30090,
+      "wind_national_MW": 1040,
+      "EV_national_thousands": 2520,
+      "heatpump_national_thousands": 860,
+      "total_installed_capacity_MW": 54130,
+      "total_demand_TWh": 61.86,
+      "population_national": 9970300,
+      "population_valais": 399377,
+      "population_sion_sierre": 110103,
+      "notes": "Sector coupling 2040 - highest PV deployment (30 GW), gas peakers with H2"
+    }
+  },
+  "data_sources": {
+    "SFOE_scenarios": "Perspectives énergétiques 2050+ (PE2050+), OFEN, Scénario-cadre 2030/2040",
+    "population_national": "Federal Statistical Office (FSO) - SCENARIO, Reference scenario",
+    "population_valais": "Canton du Valais - Population Projection, Scénario Moyen",
+    "notes": "All scenarios use Reference (Moyen) population projection. Sion+Sierre = 55332 + 54771 = 110103 (2040)"
+  }
+}

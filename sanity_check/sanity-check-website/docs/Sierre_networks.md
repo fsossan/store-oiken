@@ -1,0 +1,394 @@
+# Substations Analysis
+
+**Search by Substation ID:**  
+<input type="text" id="searchInput" placeholder="Search for ID..">  
+<button onclick="searchTable()">Search</button>
+
+**Filter by Voltage (< 0.95):**  
+<input type="number" id="voltageFilter" placeholder="Enter max voltage">  
+<button onclick="filterByVoltage()">Filter</button>
+<p id="voltageCount">Total Networks fitting criteria: 0</p>
+
+**Filter by Network Type:**  
+<select id="networkTypeFilter">
+  <option value="">-- Select Type --</option>
+  <option value="radial">Radial</option>
+  <option value="mesh">Mesh</option>
+  <option value="topology error">Topology Error</option>
+  <option value="error miscellaneous">Error miscellaneous</option>
+  <option value="failed loadflow">Failed loadflow</option>
+</select>  
+<button onclick="filterByNetworkType()">Filter</button>
+
+<p id="networkTypeCount">Total Networks matching type: 0</p>
+
+| Substation ID | Highest Voltage (p.u) | Lowest Voltage (p.u) / Node ID | Max Current* / Line ID | Overloaded Lines / Total Lines | Slack Bus Current (A) | Slackbus Power (kVA) | Nominal Demand (kW, kVAR) | Data Verification - Duplicates | Network Type | Load flow Figures | Network Topology |
+| -------------- | --------------------- | ------------------------------ | ---------------------- | ------------------------------ | ---------------------- | --------------------- | -------------------------- | -------------------------------- | --------------- | --------------- | --------------- |
+| 92417 | 1.00 | 0.97 173 | 0.24 201019 | 0 / 185 | 143 | 99 | -88, -43 | 0 | radial | [Load flow Figures](figures/92417_figures.png) | [Network Topology](figures/92417_topology.png) |
+| 92419 | 1.00 | 1.00 14 | 0.14 169345 | 0 / 14 | 51 | 35 | -31, -15 | 0 | radial | [Load flow Figures](figures/92419_figures.png) | [Network Topology](figures/92419_topology.png) |
+| 92420 | 1.00 | 0.98 183 | 0.36 161973 | 0 / 182 | 162 | 112 | -100, -48 | 0 | radial | [Load flow Figures](figures/92420_figures.png) | [Network Topology](figures/92420_topology.png) |
+| 92421 | 1.00 | 0.97 187 | 0.72 162952 | 0 / 186 | 235 | 162 | -144, -70 | 0 | radial | [Load flow Figures](figures/92421_figures.png) | [Network Topology](figures/92421_topology.png) |
+| 92422 | 1.00 | 0.98 111 | 0.42 164581 | 0 / 110 | 138 | 95 | -85, -41 | 0 | radial | [Load flow Figures](figures/92422_figures.png) | [Network Topology](figures/92422_topology.png) |
+| 92423 | 1.00 | 0.98 247 | 0.30 187880 | 0 / 265 | 199 | 137 | -123, -59 | 0 | radial | [Load flow Figures](figures/92423_figures.png) | [Network Topology](figures/92423_topology.png) |
+| 92424 | 1.00 | 1.00 9 | 0.01 190886 | 0 / 8 | 3 | 2 | -2, -1 | 0 | radial | [Load flow Figures](figures/92424_figures.png) | [Network Topology](figures/92424_topology.png) |
+| 92425 | 1.00 | 0.99 57 | 0.11 175431 | 0 / 61 | 34 | 23 | -21, -10 | 0 | radial | [Load flow Figures](figures/92425_figures.png) | [Network Topology](figures/92425_topology.png) |
+| 92426 | 1.00 | 1.00 24 | 0.07 180138 | 0 / 38 | 29 | 20 | -18, -9 | 0 | radial | [Load flow Figures](figures/92426_figures.png) | [Network Topology](figures/92426_topology.png) |
+| 92427 | 1.00 | 0.96 194 | 0.34 171061 | 0 / 204 | 131 | 91 | -80, -39 | 0 | radial | [Load flow Figures](figures/92427_figures.png) | [Network Topology](figures/92427_topology.png) |
+| 92428 | 1.00 | 0.99 28 | 0.09 192581 | 0 / 27 | 29 | 20 | -18, -9 | 0 | radial | [Load flow Figures](figures/92428_figures.png) | [Network Topology](figures/92428_topology.png) |
+| 92429 | 1.00 | 0.99 108 | 0.29 190867 | 0 / 108 | 95 | 65 | -59, -28 | 0 | radial | [Load flow Figures](figures/92429_figures.png) | [Network Topology](figures/92429_topology.png) |
+| 92430 | 1.00 | 1.00 20 | 0.09 185761 | 0 / 20 | 15 | 10 | -9, -4 | 0 | radial | [Load flow Figures](figures/92430_figures.png) | [Network Topology](figures/92430_topology.png) |
+| 92431 | 1.00 | 0.87 100 | 1.26 190276 | 1 / 99 | 145 | 100 | -83, -40 | 0 | radial | [Load flow Figures](figures/92431_figures.png) | [Network Topology](figures/92431_topology.png) |
+| 92432 | 1.00 | 0.97 220 | 5.34 64977 | 1 / 221 | 305 | 210 | -186, -90 | 0 | radial | [Load flow Figures](figures/92432_figures.png) | [Network Topology](figures/92432_topology.png) |
+| 92433 | 1.00 | 0.98 19 | 0.29 185470 | 0 / 34 | 89 | 62 | -55, -27 | 0 | radial | [Load flow Figures](figures/92433_figures.png) | [Network Topology](figures/92433_topology.png) |
+| 92435 | 1.00 | 0.97 148 | 0.68 183603 | 0 / 147 | 131 | 91 | -80, -39 | 0 | radial | [Load flow Figures](figures/92435_figures.png) | [Network Topology](figures/92435_topology.png) |
+| 92436 | 1.00 | 0.98 54 | 0.22 179017 | 0 / 59 | 60 | 41 | -37, -18 | 0 | mesh | [Load flow Figures](figures/92436_figures.png) | [Network Topology](figures/92436_topology.png) |
+| 92437 | 1.00 | 0.98 128 | 0.43 167670 | 0 / 127 | 180 | 124 | -111, -54 | 0 | radial | [Load flow Figures](figures/92437_figures.png) | [Network Topology](figures/92437_topology.png) |
+| 92438 | 1.00 | 0.97 106 | 0.69 198476 | 0 / 294 | 143 | 204 | -181, -88 | 0 | mesh | [Load flow Figures](figures/92438_figures.png) | [Network Topology](figures/92438_topology.png) |
+| 92439 | 1.00 | 1.00 11 | 0.02 163776 | 0 / 12 | 2 | 2 | -1, -1 | 0 | radial | [Load flow Figures](figures/92439_figures.png) | [Network Topology](figures/92439_topology.png) |
+| 92440 | 1.00 | 1.00 9 | 0.13 201113 | 0 / 10 | 45 | 31 | -28, -14 | 0 | radial | [Load flow Figures](figures/92440_figures.png) | [Network Topology](figures/92440_topology.png) |
+| 92441 | 1.00 | 0.97 143 | 0.32 173569 | 0 / 143 | 108 | 74 | -66, -32 | 0 | radial | [Load flow Figures](figures/92441_figures.png) | [Network Topology](figures/92441_topology.png) |
+| 92442 | 1.00 | 0.99 148 | 0.13 180302 | 0 / 148 | 81 | 56 | -50, -24 | 0 | radial | [Load flow Figures](figures/92442_figures.png) | [Network Topology](figures/92442_topology.png) |
+| 92443 | 1.00 | 0.99 106 | 0.37 180062 | 0 / 106 | 70 | 48 | -43, -21 | 0 | radial | [Load flow Figures](figures/92443_figures.png) | [Network Topology](figures/92443_topology.png) |
+| 92444 | 1.00 | 0.98 159 | 0.35 168397 | 0 / 179 | 116 | 80 | -71, -34 | 0 | radial | [Load flow Figures](figures/92444_figures.png) | [Network Topology](figures/92444_topology.png) |
+| 92446 | 1.00 | 1.00 26 | 0.03 201066 | 0 / 31 | 18 | 12 | -11, -5 | 0 | mesh | [Load flow Figures](figures/92446_figures.png) | [Network Topology](figures/92446_topology.png) |
+| 92447 | 1.00 | 0.99 38 | 0.09 166343 | 0 / 40 | 32 | 22 | -20, -10 | 0 | radial | [Load flow Figures](figures/92447_figures.png) | [Network Topology](figures/92447_topology.png) |
+| 92448 | 1.00 | 1.00 13 | 0.09 191165 | 0 / 15 | 61 | 42 | -38, -19 | 0 | mesh | [Load flow Figures](figures/92448_figures.png) | [Network Topology](figures/92448_topology.png) |
+| 92449 | 1.00 | 0.96 86 | 0.75 162702 | 0 / 85 | 168 | 116 | -102, -50 | 0 | radial | [Load flow Figures](figures/92449_figures.png) | [Network Topology](figures/92449_topology.png) |
+| 92450 | 1.00 | 0.97 138 | 0.55 169967 | 0 / 156 | 336 | 232 | -207, -100 | 0 | radial | [Load flow Figures](figures/92450_figures.png) | [Network Topology](figures/92450_topology.png) |
+| 92451 | 1.00 | 0.95 74 | 0.88 176828 | 0 / 125 | 177 | 122 | -107, -52 | 0 | mesh | [Load flow Figures](figures/92451_figures.png) | [Network Topology](figures/92451_topology.png) |
+| 92452 | 1.00 | 1.00 12 | 0.08 204674 | 0 / 11 | 62 | 43 | -39, -19 | 0 | radial | [Load flow Figures](figures/92452_figures.png) | [Network Topology](figures/92452_topology.png) |
+| 92453 | 1.00 | 1.00 8 | 0.01 171749 | 0 / 8 | 5 | 3 | -3, -1 | 0 | mesh | [Load flow Figures](figures/92453_figures.png) | [Network Topology](figures/92453_topology.png) |
+| 92454 | 1.00 | 0.98 309 | 0.32 175425 | 0 / 308 | 244 | 168 | -151, -73 | 0 | radial | [Load flow Figures](figures/92454_figures.png) | [Network Topology](figures/92454_topology.png) |
+| 92455 | 1.00 | 0.99 28 | 0.27 197878 | 0 / 27 | 37 | 25 | -23, -11 | 0 | radial | [Load flow Figures](figures/92455_figures.png) | [Network Topology](figures/92455_topology.png) |
+| 92456 | 1.00 | 0.96 257 | 0.39 175816 | 0 / 262 | 262 | 181 | -160, -77 | 0 | radial | [Load flow Figures](figures/92456_figures.png) | [Network Topology](figures/92456_topology.png) |
+| 92457 | 1.00 | 1.00 7 | 0.01 175482 | 0 / 6 | 4 | 2 | -2, -1 | 0 | radial | [Load flow Figures](figures/92457_figures.png) | [Network Topology](figures/92457_topology.png) |
+| 92458 | 1.00 | 0.96 52 | 0.44 181215 | 0 / 51 | 98 | 67 | -59, -29 | 0 | radial | [Load flow Figures](figures/92458_figures.png) | [Network Topology](figures/92458_topology.png) |
+| 92459 | 1.00 | 0.94 120 | 0.56 164674 | 0 / 119 | 120 | 83 | -72, -35 | 0 | radial | [Load flow Figures](figures/92459_figures.png) | [Network Topology](figures/92459_topology.png) |
+| 92460 | 1.00 | 0.98 38 | 0.26 187736 | 0 / 37 | 75 | 52 | -46, -22 | 0 | radial | [Load flow Figures](figures/92460_figures.png) | [Network Topology](figures/92460_topology.png) |
+| 92461 | 1.00 | 0.97 62 | 0.28 177138 | 0 / 71 | 90 | 62 | -55, -27 | 0 | radial | [Load flow Figures](figures/92461_figures.png) | [Network Topology](figures/92461_topology.png) |
+| 92464 | 1.00 | 0.94 184 | 0.72 174118 | 0 / 191 | 176 | 121 | -106, -51 | 0 | radial | [Load flow Figures](figures/92464_figures.png) | [Network Topology](figures/92464_topology.png) |
+| 92465 | 1.00 | 1.00 8 | 0.02 177788 | 0 / 7 | 4 | 2 | -2, -1 | 0 | radial | [Load flow Figures](figures/92465_figures.png) | [Network Topology](figures/92465_topology.png) |
+| 92466 | 1.00 | 1.00 16 | 0.09 201546 | 0 / 18 | 62 | 42 | -38, -18 | 0 | mesh | [Load flow Figures](figures/92466_figures.png) | [Network Topology](figures/92466_topology.png) |
+| 92467 | 1.00 | 0.95 315 | 1.58 172218 | 1 / 314 | 272 | 187 | -166, -80 | 0 | radial | [Load flow Figures](figures/92467_figures.png) | [Network Topology](figures/92467_topology.png) |
+| 92468 | 1.00 | 0.99 89 | 0.14 165723 | 0 / 103 | 65 | 45 | -40, -19 | 0 | radial | [Load flow Figures](figures/92468_figures.png) | [Network Topology](figures/92468_topology.png) |
+| 92469 | 1.00 | 1.00 16 | 0.05 184693 | 0 / 15 | 22 | 15 | -13, -7 | 0 | radial | [Load flow Figures](figures/92469_figures.png) | [Network Topology](figures/92469_topology.png) |
+| 92470 | 1.00 | 1.00 14 | 0.10 182897 | 0 / 25 | 55 | 38 | -34, -16 | 0 | mesh | [Load flow Figures](figures/92470_figures.png) | [Network Topology](figures/92470_topology.png) |
+| 92472 | 1.00 | 1.00 23 | 0.03 203433 | 0 / 31 | 19 | 13 | -12, -6 | 0 | radial | [Load flow Figures](figures/92472_figures.png) | [Network Topology](figures/92472_topology.png) |
+| 92473 | 1.00 | 0.95 103 | 0.27 179983 | 0 / 102 | 66 | 46 | -40, -19 | 0 | radial | [Load flow Figures](figures/92473_figures.png) | [Network Topology](figures/92473_topology.png) |
+| 92474 | 1.00 | 0.97 181 | 0.46 163210 | 0 / 185 | 212 | 146 | -130, -63 | 0 | radial | [Load flow Figures](figures/92474_figures.png) | [Network Topology](figures/92474_topology.png) |
+| 92475 | 1.00 | 0.99 79 | 0.29 168841 | 0 / 78 | 62 | 43 | -38, -19 | 0 | radial | [Load flow Figures](figures/92475_figures.png) | [Network Topology](figures/92475_topology.png) |
+| 92477 | 1.00 | 1.00 17 | 0.03 187392 | 0 / 20 | 14 | 10 | -9, -4 | 0 | radial | [Load flow Figures](figures/92477_figures.png) | [Network Topology](figures/92477_topology.png) |
+| 92478 | 1.00 | 0.99 335 | 0.49 169757 | 0 / 351 | 267 | 184 | -165, -80 | 0 | mesh | [Load flow Figures](figures/92478_figures.png) | [Network Topology](figures/92478_topology.png) |
+| 92479 | 1.00 | 0.98 54 | 0.39 172330 | 0 / 53 | 38 | 26 | -23, -11 | 0 | radial | [Load flow Figures](figures/92479_figures.png) | [Network Topology](figures/92479_topology.png) |
+| 92480 | 1.00 | 0.92 307 | 0.88 177563 | 0 / 309 | 365 | 252 | -221, -107 | 0 | radial | [Load flow Figures](figures/92480_figures.png) | [Network Topology](figures/92480_topology.png) |
+| 92481 | 1.00 | 0.95 53 | 0.47 200626 | 0 / 52 | 165 | 114 | -100, -48 | 0 | radial | [Load flow Figures](figures/92481_figures.png) | [Network Topology](figures/92481_topology.png) |
+| 92482 | 1.00 | 1.00 7 | 0.06 202794 | 0 / 9 | 17 | 12 | -15, -7 | 0 | radial | [Load flow Figures](figures/92482_figures.png) | [Network Topology](figures/92482_topology.png) |
+| 92483 | 1.00 | 0.99 153 | 0.22 185878 | 0 / 167 | 160 | 110 | -99, -48 | 0 | radial | [Load flow Figures](figures/92483_figures.png) | [Network Topology](figures/92483_topology.png) |
+| 92484 | 1.00 | 0.99 100 | 0.29 169523 | 0 / 101 | 80 | 55 | -49, -24 | 0 | radial | [Load flow Figures](figures/92484_figures.png) | [Network Topology](figures/92484_topology.png) |
+| 92485 | 1.00 | 0.99 26 | 0.20 185760 | 0 / 26 | 67 | 46 | -41, -20 | 0 | radial | [Load flow Figures](figures/92485_figures.png) | [Network Topology](figures/92485_topology.png) |
+| 92486 | 1.00 | 1.00 7 | 0.13 175995 | 0 / 6 | 38 | 26 | -24, -11 | 0 | radial | [Load flow Figures](figures/92486_figures.png) | [Network Topology](figures/92486_topology.png) |
+| 92487 | 1.00 | 1.00 21 | 0.12 189988 | 0 / 22 | 87 | 60 | -54, -26 | 0 | radial | [Load flow Figures](figures/92487_figures.png) | [Network Topology](figures/92487_topology.png) |
+| 92488 | 1.00 | 0.99 131 | 0.19 192888 | 0 / 130 | 103 | 71 | -64, -31 | 0 | radial | [Load flow Figures](figures/92488_figures.png) | [Network Topology](figures/92488_topology.png) |
+| 92489 | 1.00 | 1.00 17 | 0.04 163416 | 0 / 16 | 5 | 4 | -3, -2 | 0 | radial | [Load flow Figures](figures/92489_figures.png) | [Network Topology](figures/92489_topology.png) |
+| 92490 | 1.00 | 0.99 16 | 0.54 193170 | 0 / 15 | 72 | 49 | -44, -21 | 0 | radial | [Load flow Figures](figures/92490_figures.png) | [Network Topology](figures/92490_topology.png) |
+| 92491 | 1.00 | 0.98 148 | 0.27 188981 | 0 / 148 | 106 | 73 | -65, -32 | 0 | radial | [Load flow Figures](figures/92491_figures.png) | [Network Topology](figures/92491_topology.png) |
+| 92492 | 1.00 | 0.95 180 | 0.65 162395 | 0 / 191 | 163 | 113 | -99, -48 | 0 | radial | [Load flow Figures](figures/92492_figures.png) | [Network Topology](figures/92492_topology.png) |
+| 92493 | 1.00 | 0.99 51 | 0.11 169484 | 0 / 70 | 45 | 31 | -28, -14 | 0 | radial | [Load flow Figures](figures/92493_figures.png) | [Network Topology](figures/92493_topology.png) |
+| 92494 | 1.00 | 0.91 248 | 1.12 201158 | 1 / 247 | 268 | 185 | -159, -77 | 0 | radial | [Load flow Figures](figures/92494_figures.png) | [Network Topology](figures/92494_topology.png) |
+| 92495 | 1.00 | 0.99 72 | 0.22 176746 | 0 / 71 | 42 | 29 | -26, -13 | 0 | radial | [Load flow Figures](figures/92495_figures.png) | [Network Topology](figures/92495_topology.png) |
+| 92496 | NaN | NaN 0 | NaN 0 | 0 / 0 | NaN | NaN | 0, 0 | 0 | topology error | [Load flow Figures](figures/92496_figures.png) | [Network Topology](figures/92496_topology.png) |
+| 92501 | 1.00 | 0.98 117 | 0.69 186523 | 0 / 139 | 151 | 104 | -93, -45 | 0 | radial | [Load flow Figures](figures/92501_figures.png) | [Network Topology](figures/92501_topology.png) |
+| 92525 | 1.00 | 1.00 18 | 0.03 173400 | 0 / 17 | 6 | 4 | -4, -2 | 0 | radial | [Load flow Figures](figures/92525_figures.png) | [Network Topology](figures/92525_topology.png) |
+| 92526 | 1.00 | 1.00 10 | 0.05 200166 | 0 / 10 | 10 | 7 | -6, -3 | 0 | radial | [Load flow Figures](figures/92526_figures.png) | [Network Topology](figures/92526_topology.png) |
+| 92528 | 1.00 | 1.00 5 | 0.00 86589 | 0 / 8 | 0 | 0 | 0, 0 | 0 | radial | [Load flow Figures](figures/92528_figures.png) | [Network Topology](figures/92528_topology.png) |
+| 92530 | 1.00 | 0.98 113 | 0.31 186424 | 0 / 113 | 77 | 53 | -47, -23 | 0 | radial | [Load flow Figures](figures/92530_figures.png) | [Network Topology](figures/92530_topology.png) |
+| 92531 | 1.00 | 0.92 209 | 0.69 165641 | 0 / 221 | 145 | 100 | -85, -41 | 0 | radial | [Load flow Figures](figures/92531_figures.png) | [Network Topology](figures/92531_topology.png) |
+| 92532 | 1.00 | 0.99 83 | 0.31 184761 | 0 / 82 | 76 | 52 | -47, -23 | 0 | radial | [Load flow Figures](figures/92532_figures.png) | [Network Topology](figures/92532_topology.png) |
+| 92533 | 1.00 | 0.91 128 | 1.16 167708 | 1 / 129 | 165 | 114 | -96, -47 | 0 | mesh | [Load flow Figures](figures/92533_figures.png) | [Network Topology](figures/92533_topology.png) |
+| 92534 | 1.00 | 0.99 97 | 0.49 205103 | 0 / 112 | 182 | 126 | -113, -55 | 0 | mesh | [Load flow Figures](figures/92534_figures.png) | [Network Topology](figures/92534_topology.png) |
+| 92535 | 1.00 | 0.99 132 | 0.17 161743 | 0 / 131 | 91 | 63 | -57, -27 | 0 | radial | [Load flow Figures](figures/92535_figures.png) | [Network Topology](figures/92535_topology.png) |
+| 92536 | 1.00 | 0.99 37 | 0.27 187958 | 0 / 36 | 41 | 29 | -25, -12 | 0 | radial | [Load flow Figures](figures/92536_figures.png) | [Network Topology](figures/92536_topology.png) |
+| 92537 | 1.00 | 0.98 237 | 0.75 163485 | 0 / 248 | 275 | 190 | -169, -82 | 0 | radial | [Load flow Figures](figures/92537_figures.png) | [Network Topology](figures/92537_topology.png) |
+| 92538 | 1.00 | 0.97 106 | 0.30 181457 | 0 / 127 | 81 | 56 | -50, -24 | 0 | radial | [Load flow Figures](figures/92538_figures.png) | [Network Topology](figures/92538_topology.png) |
+| 92539 | 1.00 | 0.98 216 | 0.42 179124 | 0 / 216 | 155 | 107 | -95, -46 | 0 | radial | [Load flow Figures](figures/92539_figures.png) | [Network Topology](figures/92539_topology.png) |
+| 92540 | 1.00 | 0.98 53 | 0.09 175124 | 0 / 52 | 31 | 21 | -19, -9 | 0 | radial | [Load flow Figures](figures/92540_figures.png) | [Network Topology](figures/92540_topology.png) |
+| 92541 | 1.00 | 0.99 40 | 0.23 195156 | 0 / 54 | 465 | 321 | -288, -139 | 1 | mesh | [Load flow Figures](figures/92541_figures.png) | [Network Topology](figures/92541_topology.png) |
+| 92542 | 1.00 | 0.28 84 | 2.11 189765 | 1 / 92 | 72 | 50 | -34, -16 | 0 | radial | [Load flow Figures](figures/92542_figures.png) | [Network Topology](figures/92542_topology.png) |
+| 92543 | 1.00 | 1.00 6 | 0.05 74330 | 0 / 5 | 4 | 2 | -2, -1 | 0 | radial | [Load flow Figures](figures/92543_figures.png) | [Network Topology](figures/92543_topology.png) |
+| 92544 | 1.00 | 1.00 38 | 0.18 204930 | 0 / 48 | 125 | 86 | -77, -37 | 0 | mesh | [Load flow Figures](figures/92544_figures.png) | [Network Topology](figures/92544_topology.png) |
+| 92545 | 1.00 | 1.00 2 | 0.00 201257 | 0 / 5 | 0 | 0 | 0, 0 | 0 | radial | [Load flow Figures](figures/92545_figures.png) | [Network Topology](figures/92545_topology.png) |
+| 92546 | 1.00 | 0.98 52 | 0.12 181483 | 0 / 53 | 45 | 31 | -28, -13 | 0 | radial | [Load flow Figures](figures/92546_figures.png) | [Network Topology](figures/92546_topology.png) |
+| 92548 | 1.00 | 0.98 111 | 0.56 177758 | 0 / 121 | 201 | 138 | -123, -60 | 0 | radial | [Load flow Figures](figures/92548_figures.png) | [Network Topology](figures/92548_topology.png) |
+| 92549 | 1.00 | 1.00 8 | 0.01 191116 | 0 / 7 | 4 | 3 | -2, -1 | 0 | radial | [Load flow Figures](figures/92549_figures.png) | [Network Topology](figures/92549_topology.png) |
+| 92550 | 1.00 | 0.97 94 | 0.51 165443 | 0 / 93 | 220 | 152 | -135, -66 | 0 | radial | [Load flow Figures](figures/92550_figures.png) | [Network Topology](figures/92550_topology.png) |
+| 92551 | 1.00 | 0.96 57 | 0.28 173313 | 0 / 56 | 129 | 89 | -79, -38 | 0 | radial | [Load flow Figures](figures/92551_figures.png) | [Network Topology](figures/92551_topology.png) |
+| 92552 | 1.00 | 1.00 23 | 0.10 172526 | 0 / 22 | 59 | 41 | -36, -18 | 0 | radial | [Load flow Figures](figures/92552_figures.png) | [Network Topology](figures/92552_topology.png) |
+| 92554 | 1.00 | 0.96 203 | 0.35 184391 | 0 / 203 | 202 | 139 | -123, -59 | 0 | radial | [Load flow Figures](figures/92554_figures.png) | [Network Topology](figures/92554_topology.png) |
+| 92555 | 1.00 | 0.99 30 | 0.22 195974 | 0 / 46 | 230 | 159 | -143, -69 | 0 | mesh | [Load flow Figures](figures/92555_figures.png) | [Network Topology](figures/92555_topology.png) |
+| 92556 | 1.00 | 0.99 28 | 0.11 166880 | 0 / 28 | 54 | 37 | -33, -16 | 0 | radial | [Load flow Figures](figures/92556_figures.png) | [Network Topology](figures/92556_topology.png) |
+| 92557 | 1.00 | 0.99 34 | 0.30 178975 | 0 / 33 | 75 | 51 | -46, -22 | 0 | radial | [Load flow Figures](figures/92557_figures.png) | [Network Topology](figures/92557_topology.png) |
+| 92558 | 1.00 | 0.99 251 | 0.28 195566 | 0 / 253 | 213 | 147 | -131, -64 | 0 | radial | [Load flow Figures](figures/92558_figures.png) | [Network Topology](figures/92558_topology.png) |
+| 92559 | 1.00 | 0.98 13 | 0.46 178980 | 0 / 14 | 75 | 52 | -46, -22 | 0 | mesh | [Load flow Figures](figures/92559_figures.png) | [Network Topology](figures/92559_topology.png) |
+| 92560 | 1.00 | 1.00 18 | 0.04 167642 | 0 / 18 | 13 | 9 | -8, -4 | 0 | radial | [Load flow Figures](figures/92560_figures.png) | [Network Topology](figures/92560_topology.png) |
+| 92561 | 1.00 | 1.00 3 | 0.00 65680 | 0 / 7 | 0 | 0 | 0, 0 | 0 | radial | [Load flow Figures](figures/92561_figures.png) | [Network Topology](figures/92561_topology.png) |
+| 92562 | 1.00 | 0.99 30 | 0.08 186977 | 0 / 30 | 35 | 24 | -22, -11 | 0 | radial | [Load flow Figures](figures/92562_figures.png) | [Network Topology](figures/92562_topology.png) |
+| 92563 | 1.00 | 1.00 32 | 0.11 179734 | 0 / 32 | 14 | 10 | -9, -4 | 0 | radial | [Load flow Figures](figures/92563_figures.png) | [Network Topology](figures/92563_topology.png) |
+| 92564 | 1.00 | 1.00 18 | 0.05 162398 | 0 / 26 | 30 | 21 | -18, -9 | 0 | radial | [Load flow Figures](figures/92564_figures.png) | [Network Topology](figures/92564_topology.png) |
+| 92565 | 1.00 | 0.93 124 | 0.50 181669 | 0 / 136 | 129 | 89 | -77, -38 | 0 | radial | [Load flow Figures](figures/92565_figures.png) | [Network Topology](figures/92565_topology.png) |
+| 92567 | 1.00 | 0.96 139 | 0.60 190160 | 0 / 146 | 156 | 107 | -95, -46 | 0 | radial | [Load flow Figures](figures/92567_figures.png) | [Network Topology](figures/92567_topology.png) |
+| 92568 | 1.00 | 0.96 187 | 0.45 178311 | 0 / 186 | 146 | 101 | -89, -43 | 0 | radial | [Load flow Figures](figures/92568_figures.png) | [Network Topology](figures/92568_topology.png) |
+| 92569 | 1.00 | 1.00 10 | 0.03 168714 | 0 / 9 | 5 | 4 | -3, -2 | 0 | radial | [Load flow Figures](figures/92569_figures.png) | [Network Topology](figures/92569_topology.png) |
+| 92570 | 1.00 | 0.96 34 | 0.28 178559 | 0 / 35 | 87 | 60 | -53, -26 | 0 | mesh | [Load flow Figures](figures/92570_figures.png) | [Network Topology](figures/92570_topology.png) |
+| 92571 | 1.00 | 0.93 148 | 0.71 165012 | 0 / 160 | 201 | 139 | -120, -58 | 0 | radial | [Load flow Figures](figures/92571_figures.png) | [Network Topology](figures/92571_topology.png) |
+| 92572 | 1.00 | 1.00 7 | 0.01 171159 | 0 / 6 | 2 | 1 | -1, -1 | 0 | radial | [Load flow Figures](figures/92572_figures.png) | [Network Topology](figures/92572_topology.png) |
+| 92574 | 1.00 | 1.00 9 | 0.02 175036 | 0 / 8 | 4 | 2 | -2, -1 | 0 | radial | [Load flow Figures](figures/92574_figures.png) | [Network Topology](figures/92574_topology.png) |
+| 92575 | 1.00 | 0.98 154 | 0.31 190141 | 0 / 196 | 202 | 140 | -125, -60 | 0 | radial | [Load flow Figures](figures/92575_figures.png) | [Network Topology](figures/92575_topology.png) |
+| 92576 | 1.00 | 1.00 6 | 0.05 198184 | 0 / 5 | 15 | 10 | -9, -5 | 0 | radial | [Load flow Figures](figures/92576_figures.png) | [Network Topology](figures/92576_topology.png) |
+| 92577 | 1.00 | 1.00 8 | 0.05 179007 | 0 / 7 | 15 | 10 | -9, -5 | 0 | radial | [Load flow Figures](figures/92577_figures.png) | [Network Topology](figures/92577_topology.png) |
+| 92578 | NaN | NaN 0 | NaN 0 | 0 / 0 | NaN | NaN | 0, 0 | 0 | topology error | [Load flow Figures](figures/92578_figures.png) | [Network Topology](figures/92578_topology.png) |
+| 92579 | 1.00 | 1.00 7 | 0.02 180082 | 0 / 6 | 6 | 4 | -4, -2 | 0 | radial | [Load flow Figures](figures/92579_figures.png) | [Network Topology](figures/92579_topology.png) |
+| 92580 | 1.00 | 0.99 49 | 0.21 187217 | 0 / 49 | 140 | 97 | -87, -42 | 0 | radial | [Load flow Figures](figures/92580_figures.png) | [Network Topology](figures/92580_topology.png) |
+| 92581 | 1.00 | 0.98 109 | 0.13 167730 | 0 / 108 | 88 | 61 | -54, -26 | 0 | radial | [Load flow Figures](figures/92581_figures.png) | [Network Topology](figures/92581_topology.png) |
+| 92582 | 1.00 | 1.00 9 | 0.01 198185 | 0 / 8 | 2 | 1 | -1, -1 | 0 | radial | [Load flow Figures](figures/92582_figures.png) | [Network Topology](figures/92582_topology.png) |
+| 92583 | 1.00 | 0.94 206 | 0.45 203288 | 0 / 206 | 159 | 109 | -96, -47 | 0 | radial | [Load flow Figures](figures/92583_figures.png) | [Network Topology](figures/92583_topology.png) |
+| 92584 | 1.00 | 0.93 69 | 0.65 164233 | 0 / 78 | 179 | 124 | -106, -51 | 0 | radial | [Load flow Figures](figures/92584_figures.png) | [Network Topology](figures/92584_topology.png) |
+| 92585 | 1.00 | 0.96 189 | 0.63 188334 | 0 / 192 | 249 | 172 | -152, -74 | 0 | mesh | [Load flow Figures](figures/92585_figures.png) | [Network Topology](figures/92585_topology.png) |
+| 92586 | 1.00 | 1.00 7 | 0.05 174574 | 0 / 6 | 15 | 10 | -9, -5 | 0 | radial | [Load flow Figures](figures/92586_figures.png) | [Network Topology](figures/92586_topology.png) |
+| 92587 | 1.00 | 1.00 12 | 0.01 198183 | 0 / 14 | 4 | 3 | -4, -2 | 0 | mesh | [Load flow Figures](figures/92587_figures.png) | [Network Topology](figures/92587_topology.png) |
+| 92588 | 1.00 | 0.98 138 | 0.36 188613 | 0 / 141 | 132 | 91 | -81, -39 | 0 | radial | [Load flow Figures](figures/92588_figures.png) | [Network Topology](figures/92588_topology.png) |
+| 92589 | 1.00 | 0.99 128 | 0.30 205169 | 0 / 129 | 192 | 132 | -119, -57 | 0 | radial | [Load flow Figures](figures/92589_figures.png) | [Network Topology](figures/92589_topology.png) |
+| 92590 | 1.00 | 0.99 173 | 0.50 180494 | 0 / 175 | 154 | 107 | -95, -46 | 0 | mesh | [Load flow Figures](figures/92590_figures.png) | [Network Topology](figures/92590_topology.png) |
+| 92591 | 1.00 | 0.99 85 | 0.29 192939 | 0 / 84 | 90 | 62 | -55, -27 | 0 | radial | [Load flow Figures](figures/92591_figures.png) | [Network Topology](figures/92591_topology.png) |
+| 92592 | 1.00 | 0.99 20 | 0.17 171897 | 0 / 22 | 28 | 19 | -17, -8 | 0 | mesh | [Load flow Figures](figures/92592_figures.png) | [Network Topology](figures/92592_topology.png) |
+| 92593 | 1.00 | 0.97 225 | 0.54 189820 | 0 / 225 | 224 | 155 | -138, -67 | 0 | radial | [Load flow Figures](figures/92593_figures.png) | [Network Topology](figures/92593_topology.png) |
+| 92594 | 1.00 | 0.85 258 | 1.39 172699 | 3 / 257 | 307 | 212 | -177, -86 | 0 | radial | [Load flow Figures](figures/92594_figures.png) | [Network Topology](figures/92594_topology.png) |
+| 92595 | 1.00 | 0.95 196 | 0.53 183783 | 0 / 195 | 161 | 111 | -98, -47 | 0 | radial | [Load flow Figures](figures/92595_figures.png) | [Network Topology](figures/92595_topology.png) |
+| 92596 | 1.00 | 0.92 182 | 0.70 197663 | 0 / 181 | 171 | 118 | -102, -50 | 0 | radial | [Load flow Figures](figures/92596_figures.png) | [Network Topology](figures/92596_topology.png) |
+| 92597 | 1.00 | 0.99 20 | 0.07 170527 | 0 / 20 | 18 | 13 | -11, -5 | 0 | radial | [Load flow Figures](figures/92597_figures.png) | [Network Topology](figures/92597_topology.png) |
+| 92598 | 1.00 | 1.00 18 | 0.07 204008 | 0 / 17 | 37 | 25 | -23, -11 | 0 | radial | [Load flow Figures](figures/92598_figures.png) | [Network Topology](figures/92598_topology.png) |
+| 92599 | 1.00 | 0.96 170 | 0.47 178572 | 0 / 169 | 156 | 108 | -96, -46 | 0 | radial | [Load flow Figures](figures/92599_figures.png) | [Network Topology](figures/92599_topology.png) |
+| 92600 | 1.00 | 0.93 166 | 0.53 163974 | 0 / 259 | 244 | 169 | -149, -72 | 0 | radial | [Load flow Figures](figures/92600_figures.png) | [Network Topology](figures/92600_topology.png) |
+| 92601 | 1.00 | 0.98 200 | 0.80 203778 | 0 / 219 | 225 | 155 | -139, -67 | 0 | radial | [Load flow Figures](figures/92601_figures.png) | [Network Topology](figures/92601_topology.png) |
+| 92602 | 1.00 | 0.98 89 | 0.67 189581 | 0 / 88 | 132 | 91 | -81, -39 | 0 | radial | [Load flow Figures](figures/92602_figures.png) | [Network Topology](figures/92602_topology.png) |
+| 92603 | 1.00 | 0.99 13 | 0.49 164222 | 0 / 12 | 73 | 51 | -45, -22 | 0 | radial | [Load flow Figures](figures/92603_figures.png) | [Network Topology](figures/92603_topology.png) |
+| 92604 | 1.00 | 0.98 46 | 0.26 190861 | 0 / 50 | 157 | 108 | -96, -47 | 0 | radial | [Load flow Figures](figures/92604_figures.png) | [Network Topology](figures/92604_topology.png) |
+| 92605 | 1.00 | 0.99 52 | 0.27 166861 | 0 / 57 | 244 | 168 | -151, -73 | 0 | mesh | [Load flow Figures](figures/92605_figures.png) | [Network Topology](figures/92605_topology.png) |
+| 92606 | 1.00 | 1.00 13 | 0.13 198679 | 0 / 14 | 99 | 68 | -61, -30 | 0 | mesh | [Load flow Figures](figures/92606_figures.png) | [Network Topology](figures/92606_topology.png) |
+| 92607 | 1.00 | 0.99 7 | 0.20 184546 | 0 / 8 | 61 | 42 | -37, -18 | 0 | mesh | [Load flow Figures](figures/92607_figures.png) | [Network Topology](figures/92607_topology.png) |
+| 92608 | 1.00 | 0.99 47 | 0.12 186591 | 0 / 50 | 94 | 65 | -58, -28 | 0 | radial | [Load flow Figures](figures/92608_figures.png) | [Network Topology](figures/92608_topology.png) |
+| 92609 | NaN | NaN 0 | NaN 0 | 0 / 0 | NaN | NaN | 0, 0 | 0 | topology error | [Load flow Figures](figures/92609_figures.png) | [Network Topology](figures/92609_topology.png) |
+| 92610 | 1.00 | 0.99 6 | 2.70 106650 | 1 / 7 | 97 | 67 | -60, -29 | 0 | mesh | [Load flow Figures](figures/92610_figures.png) | [Network Topology](figures/92610_topology.png) |
+| 92611 | 1.00 | 1.00 13 | 0.13 185690 | 0 / 16 | 49 | 34 | -30, -15 | 0 | mesh | [Load flow Figures](figures/92611_figures.png) | [Network Topology](figures/92611_topology.png) |
+| 92612 | 1.00 | 0.99 47 | 0.13 170489 | 0 / 59 | 29 | 20 | -18, -9 | 0 | mesh | [Load flow Figures](figures/92612_figures.png) | [Network Topology](figures/92612_topology.png) |
+| 92613 | 1.00 | 0.96 35 | 0.63 180151 | 0 / 51 | 158 | 109 | -96, -46 | 0 | radial | [Load flow Figures](figures/92613_figures.png) | [Network Topology](figures/92613_topology.png) |
+| 92615 | 1.00 | 0.95 266 | 0.35 166866 | 0 / 266 | 182 | 126 | -111, -54 | 0 | radial | [Load flow Figures](figures/92615_figures.png) | [Network Topology](figures/92615_topology.png) |
+| 92616 | 1.00 | 0.87 127 | 3.44 162829 | 1 / 225 | 212 | 146 | -125, -61 | 0 | radial | [Load flow Figures](figures/92616_figures.png) | [Network Topology](figures/92616_topology.png) |
+| 92617 | 1.00 | 0.98 125 | 0.27 203299 | 0 / 124 | 166 | 115 | -102, -50 | 0 | radial | [Load flow Figures](figures/92617_figures.png) | [Network Topology](figures/92617_topology.png) |
+| 92618 | 1.00 | 1.00 69 | 0.14 175903 | 0 / 68 | 46 | 32 | -29, -14 | 0 | radial | [Load flow Figures](figures/92618_figures.png) | [Network Topology](figures/92618_topology.png) |
+| 92619 | 1.00 | 0.97 94 | 0.74 164231 | 0 / 93 | 161 | 111 | -99, -48 | 0 | radial | [Load flow Figures](figures/92619_figures.png) | [Network Topology](figures/92619_topology.png) |
+| 92620 | 1.00 | 0.97 140 | 0.38 189337 | 0 / 141 | 122 | 84 | -75, -36 | 0 | radial | [Load flow Figures](figures/92620_figures.png) | [Network Topology](figures/92620_topology.png) |
+| 92621 | 1.00 | 1.00 13 | 0.30 198217 | 0 / 14 | 179 | 124 | -112, -54 | 0 | mesh | [Load flow Figures](figures/92621_figures.png) | [Network Topology](figures/92621_topology.png) |
+| 92622 | 1.00 | 1.00 16 | 0.02 196186 | 0 / 17 | 7 | 5 | -4, -2 | 0 | radial | [Load flow Figures](figures/92622_figures.png) | [Network Topology](figures/92622_topology.png) |
+| 92624 | 1.00 | 1.00 9 | 0.00 201280 | 0 / 8 | 1 | 0 | -0, -0 | 0 | radial | [Load flow Figures](figures/92624_figures.png) | [Network Topology](figures/92624_topology.png) |
+| 92625 | 1.00 | 0.98 102 | 0.48 190764 | 0 / 101 | 106 | 73 | -65, -31 | 0 | radial | [Load flow Figures](figures/92625_figures.png) | [Network Topology](figures/92625_topology.png) |
+| 92626 | 1.00 | 1.00 8 | 0.06 175185 | 0 / 7 | 18 | 12 | -11, -5 | 0 | radial | [Load flow Figures](figures/92626_figures.png) | [Network Topology](figures/92626_topology.png) |
+| 92627 | 1.00 | 1.00 8 | 0.02 177681 | 0 / 8 | 5 | 4 | -3, -2 | 0 | radial | [Load flow Figures](figures/92627_figures.png) | [Network Topology](figures/92627_topology.png) |
+| 92628 | 1.00 | 0.99 39 | 0.09 167209 | 0 / 38 | 24 | 17 | -15, -7 | 0 | radial | [Load flow Figures](figures/92628_figures.png) | [Network Topology](figures/92628_topology.png) |
+| 92629 | 1.00 | 0.98 61 | 0.19 186341 | 0 / 63 | 50 | 35 | -31, -15 | 0 | radial | [Load flow Figures](figures/92629_figures.png) | [Network Topology](figures/92629_topology.png) |
+| 92630 | 1.00 | 0.90 264 | 0.92 195738 | 0 / 263 | 240 | 166 | -143, -69 | 0 | radial | [Load flow Figures](figures/92630_figures.png) | [Network Topology](figures/92630_topology.png) |
+| 92631 | 1.00 | 1.00 39 | 0.05 162595 | 0 / 39 | 23 | 16 | -14, -7 | 0 | radial | [Load flow Figures](figures/92631_figures.png) | [Network Topology](figures/92631_topology.png) |
+| 92632 | 1.00 | 0.99 79 | 0.12 193057 | 0 / 79 | 59 | 41 | -37, -18 | 0 | radial | [Load flow Figures](figures/92632_figures.png) | [Network Topology](figures/92632_topology.png) |
+| 92633 | 1.00 | 0.95 291 | 1.14 176287 | 1 / 307 | 535 | 369 | -325, -157 | 0 | radial | [Load flow Figures](figures/92633_figures.png) | [Network Topology](figures/92633_topology.png) |
+| 92634 | 1.00 | 1.00 9 | 0.01 192046 | 0 / 9 | 5 | 4 | -3, -2 | 0 | radial | [Load flow Figures](figures/92634_figures.png) | [Network Topology](figures/92634_topology.png) |
+| 92635 | 1.00 | 1.00 7 | 0.20 198207 | 0 / 6 | 60 | 42 | -37, -18 | 0 | radial | [Load flow Figures](figures/92635_figures.png) | [Network Topology](figures/92635_topology.png) |
+| 92636 | 1.00 | 0.95 141 | 0.79 175438 | 0 / 143 | 206 | 142 | -125, -60 | 0 | mesh | [Load flow Figures](figures/92636_figures.png) | [Network Topology](figures/92636_topology.png) |
+| 92637 | 1.00 | 0.98 73 | 0.97 65030 | 0 / 88 | 248 | 171 | -153, -74 | 0 | radial | [Load flow Figures](figures/92637_figures.png) | [Network Topology](figures/92637_topology.png) |
+| 92638 | 1.00 | 0.98 200 | 0.62 169110 | 0 / 204 | 141 | 98 | -87, -42 | 0 | radial | [Load flow Figures](figures/92638_figures.png) | [Network Topology](figures/92638_topology.png) |
+| 92639 | 1.00 | 0.99 28 | 0.05 199981 | 0 / 27 | 16 | 11 | -10, -5 | 0 | radial | [Load flow Figures](figures/92639_figures.png) | [Network Topology](figures/92639_topology.png) |
+| 92640 | 1.00 | 0.97 44 | 0.81 174889 | 0 / 91 | 170 | 117 | -104, -50 | 0 | radial | [Load flow Figures](figures/92640_figures.png) | [Network Topology](figures/92640_topology.png) |
+| 92641 | 1.00 | 1.00 8 | 0.05 173837 | 0 / 7 | 31 | 21 | -19, -9 | 0 | radial | [Load flow Figures](figures/92641_figures.png) | [Network Topology](figures/92641_topology.png) |
+| 92642 | 1.00 | 0.96 233 | 0.45 172992 | 0 / 232 | 234 | 161 | -143, -69 | 0 | radial | [Load flow Figures](figures/92642_figures.png) | [Network Topology](figures/92642_topology.png) |
+| 92643 | 1.00 | 0.98 268 | 0.41 174849 | 0 / 267 | 173 | 120 | -107, -52 | 0 | radial | [Load flow Figures](figures/92643_figures.png) | [Network Topology](figures/92643_topology.png) |
+| 92644 | 1.00 | 1.00 45 | 0.14 190448 | 0 / 44 | 65 | 45 | -41, -20 | 0 | radial | [Load flow Figures](figures/92644_figures.png) | [Network Topology](figures/92644_topology.png) |
+| 92645 | 1.00 | 0.97 82 | 0.32 174935 | 0 / 81 | 91 | 63 | -56, -27 | 0 | radial | [Load flow Figures](figures/92645_figures.png) | [Network Topology](figures/92645_topology.png) |
+| 92646 | 1.00 | 0.98 102 | 0.17 184986 | 0 / 101 | 68 | 47 | -42, -20 | 0 | radial | [Load flow Figures](figures/92646_figures.png) | [Network Topology](figures/92646_topology.png) |
+| 92647 | 1.00 | 0.97 207 | 0.45 186089 | 0 / 220 | 111 | 77 | -68, -33 | 0 | radial | [Load flow Figures](figures/92647_figures.png) | [Network Topology](figures/92647_topology.png) |
+| 92648 | 1.00 | 0.95 65 | 0.26 165388 | 0 / 65 | 141 | 97 | -86, -42 | 0 | radial | [Load flow Figures](figures/92648_figures.png) | [Network Topology](figures/92648_topology.png) |
+| 92649 | 1.00 | 1.00 4 | 0.00 201273 | 0 / 6 | 0 | 0 | 0, 0 | 0 | radial | [Load flow Figures](figures/92649_figures.png) | [Network Topology](figures/92649_topology.png) |
+| 92650 | 1.00 | 0.94 295 | 0.70 195034 | 0 / 296 | 336 | 232 | -203, -98 | 0 | radial | [Load flow Figures](figures/92650_figures.png) | [Network Topology](figures/92650_topology.png) |
+| 92651 | 1.00 | 0.96 58 | 0.51 177048 | 0 / 57 | 92 | 63 | -55, -27 | 0 | radial | [Load flow Figures](figures/92651_figures.png) | [Network Topology](figures/92651_topology.png) |
+| 92652 | 1.00 | 0.86 83 | 0.70 163861 | 0 / 86 | 175 | 121 | -101, -49 | 0 | mesh | [Load flow Figures](figures/92652_figures.png) | [Network Topology](figures/92652_topology.png) |
+| 92654 | 1.00 | 0.98 66 | 0.24 166829 | 0 / 65 | 48 | 33 | -29, -14 | 0 | radial | [Load flow Figures](figures/92654_figures.png) | [Network Topology](figures/92654_topology.png) |
+| 92655 | 1.00 | 0.98 195 | 0.28 182851 | 0 / 194 | 167 | 115 | -103, -50 | 0 | radial | [Load flow Figures](figures/92655_figures.png) | [Network Topology](figures/92655_topology.png) |
+| 92656 | NaN | NaN 0 | NaN 0 | 0 / 0 | NaN | NaN | 0, 0 | 0 | topology error | [Load flow Figures](figures/92656_figures.png) | [Network Topology](figures/92656_topology.png) |
+| 92657 | 1.00 | 0.93 72 | 2.27 174688 | 2 / 71 | 196 | 135 | -116, -56 | 0 | radial | [Load flow Figures](figures/92657_figures.png) | [Network Topology](figures/92657_topology.png) |
+| 92658 | 1.00 | 0.93 161 | 0.57 188587 | 0 / 160 | 139 | 96 | -83, -40 | 0 | radial | [Load flow Figures](figures/92658_figures.png) | [Network Topology](figures/92658_topology.png) |
+| 92659 | 1.00 | 0.97 320 | 0.55 189213 | 0 / 320 | 263 | 182 | -161, -78 | 0 | radial | [Load flow Figures](figures/92659_figures.png) | [Network Topology](figures/92659_topology.png) |
+| 92660 | 1.00 | 0.97 269 | 0.38 173319 | 0 / 273 | 241 | 166 | -148, -72 | 0 | radial | [Load flow Figures](figures/92660_figures.png) | [Network Topology](figures/92660_topology.png) |
+| 92661 | 1.00 | 0.94 110 | 1.11 168913 | 1 / 230 | 189 | 130 | -115, -56 | 0 | radial | [Load flow Figures](figures/92661_figures.png) | [Network Topology](figures/92661_topology.png) |
+| 92662 | 1.00 | 0.98 186 | 0.28 185665 | 0 / 188 | 161 | 111 | -99, -48 | 0 | radial | [Load flow Figures](figures/92662_figures.png) | [Network Topology](figures/92662_topology.png) |
+| 92663 | 1.00 | 0.99 62 | 0.33 180588 | 0 / 69 | 168 | 116 | -104, -50 | 0 | radial | [Load flow Figures](figures/92663_figures.png) | [Network Topology](figures/92663_topology.png) |
+| 92664 | 1.00 | 1.00 27 | 0.20 173793 | 0 / 26 | 111 | 77 | -69, -33 | 0 | radial | [Load flow Figures](figures/92664_figures.png) | [Network Topology](figures/92664_topology.png) |
+| 92665 | 1.00 | 0.96 321 | 0.47 179764 | 0 / 322 | 238 | 164 | -146, -71 | 0 | radial | [Load flow Figures](figures/92665_figures.png) | [Network Topology](figures/92665_topology.png) |
+| 92666 | 1.00 | 0.98 179 | 0.63 182297 | 0 / 180 | 160 | 111 | -99, -48 | 0 | radial | [Load flow Figures](figures/92666_figures.png) | [Network Topology](figures/92666_topology.png) |
+| 92667 | 1.00 | 0.98 89 | 0.19 184215 | 0 / 90 | 71 | 49 | -44, -21 | 0 | radial | [Load flow Figures](figures/92667_figures.png) | [Network Topology](figures/92667_topology.png) |
+| 92668 | 1.00 | 0.99 31 | 0.06 192779 | 0 / 30 | 12 | 8 | -7, -4 | 0 | radial | [Load flow Figures](figures/92668_figures.png) | [Network Topology](figures/92668_topology.png) |
+| 92669 | 1.00 | 0.99 55 | 0.23 171969 | 0 / 54 | 61 | 42 | -38, -18 | 0 | radial | [Load flow Figures](figures/92669_figures.png) | [Network Topology](figures/92669_topology.png) |
+| 92670 | 1.00 | 0.99 186 | 0.28 191181 | 0 / 187 | 169 | 117 | -104, -51 | 0 | radial | [Load flow Figures](figures/92670_figures.png) | [Network Topology](figures/92670_topology.png) |
+| 92671 | 1.00 | 0.99 74 | 0.64 169703 | 0 / 93 | 126 | 87 | -78, -38 | 0 | radial | [Load flow Figures](figures/92671_figures.png) | [Network Topology](figures/92671_topology.png) |
+| 92672 | 1.00 | 0.98 115 | 0.35 186134 | 0 / 118 | 235 | 162 | -145, -70 | 0 | radial | [Load flow Figures](figures/92672_figures.png) | [Network Topology](figures/92672_topology.png) |
+| 92673 | 1.00 | 0.98 35 | 0.22 173661 | 0 / 38 | 67 | 46 | -41, -20 | 0 | mesh | [Load flow Figures](figures/92673_figures.png) | [Network Topology](figures/92673_topology.png) |
+| 92674 | 1.00 | 0.98 152 | 0.31 203791 | 0 / 151 | 100 | 69 | -62, -30 | 0 | radial | [Load flow Figures](figures/92674_figures.png) | [Network Topology](figures/92674_topology.png) |
+| 92675 | 1.00 | 0.99 65 | 0.27 199924 | 0 / 81 | 89 | 61 | -55, -27 | 0 | radial | [Load flow Figures](figures/92675_figures.png) | [Network Topology](figures/92675_topology.png) |
+| 92676 | 1.00 | 1.00 10 | 0.11 169804 | 0 / 9 | 42 | 29 | -26, -13 | 0 | radial | [Load flow Figures](figures/92676_figures.png) | [Network Topology](figures/92676_topology.png) |
+| 92677 | 1.00 | 0.98 242 | 0.54 189625 | 0 / 244 | 222 | 153 | -136, -66 | 0 | radial | [Load flow Figures](figures/92677_figures.png) | [Network Topology](figures/92677_topology.png) |
+| 92678 | 1.00 | 0.99 29 | 0.15 183913 | 0 / 28 | 48 | 33 | -30, -14 | 0 | radial | [Load flow Figures](figures/92678_figures.png) | [Network Topology](figures/92678_topology.png) |
+| 92679 | 1.00 | 0.96 246 | 0.32 190316 | 0 / 245 | 172 | 119 | -106, -51 | 0 | radial | [Load flow Figures](figures/92679_figures.png) | [Network Topology](figures/92679_topology.png) |
+| 92680 | 1.00 | 0.98 91 | 0.38 191820 | 0 / 90 | 69 | 47 | -42, -20 | 0 | radial | [Load flow Figures](figures/92680_figures.png) | [Network Topology](figures/92680_topology.png) |
+| 92681 | 1.00 | 0.98 219 | 0.37 200608 | 0 / 220 | 214 | 147 | -132, -64 | 0 | radial | [Load flow Figures](figures/92681_figures.png) | [Network Topology](figures/92681_topology.png) |
+| 92682 | 1.00 | 0.96 61 | 0.31 167304 | 0 / 60 | 45 | 31 | -27, -13 | 0 | radial | [Load flow Figures](figures/92682_figures.png) | [Network Topology](figures/92682_topology.png) |
+| 92683 | 1.00 | 0.98 123 | 0.21 175730 | 0 / 122 | 82 | 57 | -51, -25 | 0 | radial | [Load flow Figures](figures/92683_figures.png) | [Network Topology](figures/92683_topology.png) |
+| 92684 | 1.00 | 0.99 93 | 0.27 176763 | 0 / 105 | 89 | 62 | -55, -27 | 0 | radial | [Load flow Figures](figures/92684_figures.png) | [Network Topology](figures/92684_topology.png) |
+| 92685 | 1.00 | 0.99 52 | 0.19 162205 | 0 / 51 | 100 | 69 | -62, -30 | 0 | radial | [Load flow Figures](figures/92685_figures.png) | [Network Topology](figures/92685_topology.png) |
+| 92686 | 1.00 | 1.00 24 | 0.08 186872 | 0 / 47 | 8 | 32 | -29, -14 | 0 | radial | [Load flow Figures](figures/92686_figures.png) | [Network Topology](figures/92686_topology.png) |
+| 92687 | 1.00 | 0.97 49 | 0.36 185540 | 0 / 65 | 96 | 66 | -59, -28 | 0 | radial | [Load flow Figures](figures/92687_figures.png) | [Network Topology](figures/92687_topology.png) |
+| 92688 | 1.00 | 0.96 387 | 0.68 174558 | 0 / 388 | 385 | 265 | -235, -114 | 0 | mesh | [Load flow Figures](figures/92688_figures.png) | [Network Topology](figures/92688_topology.png) |
+| 92689 | NaN | NaN 0 | NaN 0 | 0 / 0 | NaN | NaN | 0, 0 | 0 | topology error | [Load flow Figures](figures/92689_figures.png) | [Network Topology](figures/92689_topology.png) |
+| 92690 | 1.00 | 0.98 4 | 5.10 65108 | 1 / 10 | 184 | 127 | -112, -54 | 0 | mesh | [Load flow Figures](figures/92690_figures.png) | [Network Topology](figures/92690_topology.png) |
+| 92691 | 1.00 | 0.95 62 | 0.60 197645 | 0 / 62 | 98 | 67 | -59, -29 | 0 | radial | [Load flow Figures](figures/92691_figures.png) | [Network Topology](figures/92691_topology.png) |
+| 92692 | NaN | NaN 0 | NaN 0 | 0 / 0 | NaN | NaN | 0, 0 | 0 | topology error | [Load flow Figures](figures/92692_figures.png) | [Network Topology](figures/92692_topology.png) |
+| 92693 | 1.00 | 1.00 15 | 0.02 196189 | 0 / 14 | 6 | 4 | -4, -2 | 0 | radial | [Load flow Figures](figures/92693_figures.png) | [Network Topology](figures/92693_topology.png) |
+| 92694 | 1.00 | 1.00 9 | 0.06 171512 | 0 / 10 | 15 | 10 | -9, -5 | 0 | mesh | [Load flow Figures](figures/92694_figures.png) | [Network Topology](figures/92694_topology.png) |
+| 92695 | 1.00 | 0.98 123 | 0.28 180889 | 0 / 123 | 105 | 73 | -65, -31 | 0 | radial | [Load flow Figures](figures/92695_figures.png) | [Network Topology](figures/92695_topology.png) |
+| 92696 | 1.00 | 1.00 12 | 0.00 84535 | 0 / 12 | 6 | 4 | -6, -3 | 0 | mesh | [Load flow Figures](figures/92696_figures.png) | [Network Topology](figures/92696_topology.png) |
+| 92697 | 1.00 | 0.98 42 | 1.88 74341 | 1 / 46 | 27 | 19 | -17, -8 | 0 | radial | [Load flow Figures](figures/92697_figures.png) | [Network Topology](figures/92697_topology.png) |
+| 92698 | 1.00 | 0.99 33 | 0.08 180866 | 0 / 32 | 20 | 14 | -12, -6 | 0 | radial | [Load flow Figures](figures/92698_figures.png) | [Network Topology](figures/92698_topology.png) |
+| 92699 | 1.00 | 1.00 26 | 0.03 198167 | 0 / 25 | 9 | 6 | -6, -3 | 0 | radial | [Load flow Figures](figures/92699_figures.png) | [Network Topology](figures/92699_topology.png) |
+| 92701 | 1.00 | 0.98 16 | 0.33 180595 | 0 / 15 | 66 | 46 | -41, -20 | 0 | radial | [Load flow Figures](figures/92701_figures.png) | [Network Topology](figures/92701_topology.png) |
+| 92703 | 1.00 | 1.00 17 | 0.02 191691 | 0 / 17 | 12 | 9 | -8, -4 | 0 | radial | [Load flow Figures](figures/92703_figures.png) | [Network Topology](figures/92703_topology.png) |
+| 92704 | 1.00 | 0.99 63 | 0.15 180862 | 0 / 62 | 46 | 31 | -28, -14 | 0 | radial | [Load flow Figures](figures/92704_figures.png) | [Network Topology](figures/92704_topology.png) |
+| 92705 | 1.00 | 0.97 90 | 0.73 175532 | 0 / 89 | 125 | 86 | -76, -37 | 0 | radial | [Load flow Figures](figures/92705_figures.png) | [Network Topology](figures/92705_topology.png) |
+| 92706 | 1.00 | 0.98 78 | 0.12 166692 | 0 / 79 | 59 | 41 | -36, -18 | 0 | radial | [Load flow Figures](figures/92706_figures.png) | [Network Topology](figures/92706_topology.png) |
+| 92708 | 1.00 | 0.99 11 | 0.02 186861 | 0 / 10 | 4 | 3 | -2, -1 | 0 | radial | [Load flow Figures](figures/92708_figures.png) | [Network Topology](figures/92708_topology.png) |
+| 92710 | 1.00 | 0.97 188 | 0.41 182450 | 0 / 192 | 146 | 100 | -89, -43 | 0 | radial | [Load flow Figures](figures/92710_figures.png) | [Network Topology](figures/92710_topology.png) |
+| 92711 | 1.00 | 1.00 15 | 0.11 176305 | 0 / 15 | 16 | 11 | -10, -5 | 0 | radial | [Load flow Figures](figures/92711_figures.png) | [Network Topology](figures/92711_topology.png) |
+| 92712 | 1.00 | 0.96 175 | 0.23 170472 | 0 / 175 | 141 | 97 | -87, -42 | 0 | radial | [Load flow Figures](figures/92712_figures.png) | [Network Topology](figures/92712_topology.png) |
+| 92713 | 1.00 | 0.97 172 | 0.43 165834 | 0 / 270 | 227 | 156 | -139, -67 | 0 | radial | [Load flow Figures](figures/92713_figures.png) | [Network Topology](figures/92713_topology.png) |
+| 92714 | 1.00 | 1.00 8 | 0.00 84241 | 0 / 14 | 0 | 0 | 0, 0 | 0 | radial | [Load flow Figures](figures/92714_figures.png) | [Network Topology](figures/92714_topology.png) |
+| 92715 | 1.00 | 0.98 85 | 0.25 198800 | 0 / 99 | 72 | 50 | -45, -22 | 0 | radial | [Load flow Figures](figures/92715_figures.png) | [Network Topology](figures/92715_topology.png) |
+| 92716 | 1.00 | 0.89 228 | 1.59 203357 | 1 / 227 | 229 | 158 | -136, -66 | 0 | radial | [Load flow Figures](figures/92716_figures.png) | [Network Topology](figures/92716_topology.png) |
+| 92717 | 1.00 | 0.99 28 | 0.18 163339 | 0 / 28 | 45 | 31 | -28, -13 | 0 | radial | [Load flow Figures](figures/92717_figures.png) | [Network Topology](figures/92717_topology.png) |
+| 92718 | 1.00 | 0.96 84 | 1.17 179431 | 1 / 541 | 461 | 318 | -281, -136 | 0 | radial | [Load flow Figures](figures/92718_figures.png) | [Network Topology](figures/92718_topology.png) |
+| 92721 | 1.00 | 0.98 141 | 0.27 191377 | 0 / 147 | 108 | 75 | -67, -32 | 0 | radial | [Load flow Figures](figures/92721_figures.png) | [Network Topology](figures/92721_topology.png) |
+| 92722 | 1.00 | 0.93 80 | 1.30 175059 | 1 / 79 | 222 | 153 | -134, -65 | 0 | radial | [Load flow Figures](figures/92722_figures.png) | [Network Topology](figures/92722_topology.png) |
+| 92723 | 1.00 | 0.99 43 | 0.21 180310 | 0 / 44 | 187 | 129 | -116, -56 | 0 | radial | [Load flow Figures](figures/92723_figures.png) | [Network Topology](figures/92723_topology.png) |
+| 92724 | 1.00 | 0.99 23 | 0.16 171723 | 0 / 24 | 56 | 39 | -34, -17 | 0 | radial | [Load flow Figures](figures/92724_figures.png) | [Network Topology](figures/92724_topology.png) |
+| 92726 | 1.00 | 0.95 173 | 0.47 171328 | 0 / 174 | 178 | 123 | -109, -53 | 0 | radial | [Load flow Figures](figures/92726_figures.png) | [Network Topology](figures/92726_topology.png) |
+| 92727 | NaN | NaN 0 | NaN 0 | 0 / 0 | NaN | NaN | 0, 0 | 0 | topology error | [Load flow Figures](figures/92727_figures.png) | [Network Topology](figures/92727_topology.png) |
+| 92728 | 1.00 | 1.00 10 | 0.03 177129 | 0 / 11 | 8 | 5 | -5, -2 | 0 | radial | [Load flow Figures](figures/92728_figures.png) | [Network Topology](figures/92728_topology.png) |
+| 92729 | 1.00 | 0.87 194 | 0.96 164790 | 0 / 194 | 309 | 213 | -182, -88 | 0 | radial | [Load flow Figures](figures/92729_figures.png) | [Network Topology](figures/92729_topology.png) |
+| 92730 | 1.00 | 1.00 14 | 0.02 183033 | 0 / 15 | 2 | 2 | -1, -1 | 0 | mesh | [Load flow Figures](figures/92730_figures.png) | [Network Topology](figures/92730_topology.png) |
+| 92731 | 1.00 | 1.00 16 | 0.02 175170 | 0 / 15 | 7 | 5 | -4, -2 | 0 | radial | [Load flow Figures](figures/92731_figures.png) | [Network Topology](figures/92731_topology.png) |
+| 92732 | 1.00 | 1.00 12 | 0.05 197625 | 0 / 12 | 14 | 10 | -9, -4 | 0 | radial | [Load flow Figures](figures/92732_figures.png) | [Network Topology](figures/92732_topology.png) |
+| 92733 | 1.00 | 0.94 67 | 1.22 162687 | 1 / 66 | 189 | 130 | -114, -55 | 0 | radial | [Load flow Figures](figures/92733_figures.png) | [Network Topology](figures/92733_topology.png) |
+| 92734 | 1.00 | 0.94 238 | 0.98 175866 | 0 / 250 | 266 | 183 | -161, -78 | 0 | radial | [Load flow Figures](figures/92734_figures.png) | [Network Topology](figures/92734_topology.png) |
+| 92735 | 1.00 | 0.97 92 | 0.46 200347 | 0 / 91 | 94 | 65 | -57, -28 | 0 | radial | [Load flow Figures](figures/92735_figures.png) | [Network Topology](figures/92735_topology.png) |
+| 92736 | 1.00 | 0.96 181 | 0.56 183930 | 0 / 183 | 197 | 136 | -119, -58 | 0 | radial | [Load flow Figures](figures/92736_figures.png) | [Network Topology](figures/92736_topology.png) |
+| 92737 | 1.00 | 0.97 182 | 0.37 178948 | 0 / 181 | 218 | 150 | -134, -65 | 0 | radial | [Load flow Figures](figures/92737_figures.png) | [Network Topology](figures/92737_topology.png) |
+| 92738 | 1.00 | 0.99 26 | 0.07 165635 | 0 / 33 | 32 | 22 | -20, -10 | 0 | radial | [Load flow Figures](figures/92738_figures.png) | [Network Topology](figures/92738_topology.png) |
+| 92739 | 1.00 | 0.97 237 | 0.44 170580 | 0 / 249 | 243 | 168 | -149, -72 | 0 | radial | [Load flow Figures](figures/92739_figures.png) | [Network Topology](figures/92739_topology.png) |
+| 92740 | 1.00 | 1.00 10 | 0.10 190296 | 0 / 9 | 49 | 34 | -31, -15 | 0 | radial | [Load flow Figures](figures/92740_figures.png) | [Network Topology](figures/92740_topology.png) |
+| 92741 | 1.00 | 0.94 157 | 0.75 168556 | 0 / 156 | 200 | 138 | -121, -58 | 0 | radial | [Load flow Figures](figures/92741_figures.png) | [Network Topology](figures/92741_topology.png) |
+| 92742 | 1.00 | 0.99 23 | 0.16 193931 | 0 / 26 | 121 | 83 | -74, -36 | 0 | mesh | [Load flow Figures](figures/92742_figures.png) | [Network Topology](figures/92742_topology.png) |
+| 92744 | 1.00 | 0.99 63 | 0.26 187793 | 0 / 67 | 75 | 52 | -46, -22 | 0 | radial | [Load flow Figures](figures/92744_figures.png) | [Network Topology](figures/92744_topology.png) |
+| 92745 | 1.00 | 0.99 33 | 0.09 168407 | 0 / 35 | 35 | 24 | -22, -10 | 0 | radial | [Load flow Figures](figures/92745_figures.png) | [Network Topology](figures/92745_topology.png) |
+| 92747 | 1.00 | 0.99 84 | 0.19 191790 | 0 / 84 | 56 | 39 | -35, -17 | 0 | radial | [Load flow Figures](figures/92747_figures.png) | [Network Topology](figures/92747_topology.png) |
+| 92748 | 1.00 | 0.99 24 | 0.17 164382 | 0 / 23 | 56 | 38 | -34, -17 | 0 | radial | [Load flow Figures](figures/92748_figures.png) | [Network Topology](figures/92748_topology.png) |
+| 92749 | 1.00 | 0.96 221 | 0.70 173022 | 0 / 225 | 148 | 102 | -90, -43 | 0 | radial | [Load flow Figures](figures/92749_figures.png) | [Network Topology](figures/92749_topology.png) |
+| 92750 | 1.00 | 0.93 308 | 0.90 175972 | 0 / 313 | 312 | 215 | -190, -92 | 0 | radial | [Load flow Figures](figures/92750_figures.png) | [Network Topology](figures/92750_topology.png) |
+| 92751 | 1.00 | 0.98 109 | 0.20 166637 | 0 / 109 | 74 | 51 | -45, -22 | 0 | radial | [Load flow Figures](figures/92751_figures.png) | [Network Topology](figures/92751_topology.png) |
+| 92752 | 1.00 | 1.00 9 | 0.00 198179 | 0 / 8 | 1 | 1 | -1, -0 | 0 | radial | [Load flow Figures](figures/92752_figures.png) | [Network Topology](figures/92752_topology.png) |
+| 92753 | 1.00 | 1.00 9 | 0.01 198176 | 0 / 8 | 2 | 1 | -1, -1 | 0 | radial | [Load flow Figures](figures/92753_figures.png) | [Network Topology](figures/92753_topology.png) |
+| 92754 | 1.00 | 0.96 361 | 0.55 187655 | 0 / 361 | 306 | 211 | -187, -91 | 0 | radial | [Load flow Figures](figures/92754_figures.png) | [Network Topology](figures/92754_topology.png) |
+| 92755 | 1.00 | 0.97 224 | 0.70 179273 | 0 / 224 | 205 | 142 | -125, -61 | 0 | radial | [Load flow Figures](figures/92755_figures.png) | [Network Topology](figures/92755_topology.png) |
+| 92756 | 1.00 | 0.96 131 | 0.38 195973 | 0 / 134 | 101 | 69 | -60, -29 | 0 | radial | [Load flow Figures](figures/92756_figures.png) | [Network Topology](figures/92756_topology.png) |
+| 92757 | 1.00 | 1.00 10 | 0.04 179826 | 0 / 10 | 8 | 5 | -5, -2 | 0 | radial | [Load flow Figures](figures/92757_figures.png) | [Network Topology](figures/92757_topology.png) |
+| 92758 | 1.00 | 1.00 9 | 0.10 198180 | 0 / 10 | 29 | 20 | -19, -9 | 0 | mesh | [Load flow Figures](figures/92758_figures.png) | [Network Topology](figures/92758_topology.png) |
+| 92759 | 1.00 | 0.97 109 | 0.53 188247 | 0 / 108 | 100 | 69 | -61, -30 | 0 | radial | [Load flow Figures](figures/92759_figures.png) | [Network Topology](figures/92759_topology.png) |
+| 92760 | 1.00 | 0.98 272 | 0.46 189782 | 0 / 273 | 290 | 200 | -178, -86 | 0 | radial | [Load flow Figures](figures/92760_figures.png) | [Network Topology](figures/92760_topology.png) |
+| 92761 | 1.00 | 1.00 7 | 0.05 198177 | 0 / 6 | 15 | 10 | -9, -5 | 0 | radial | [Load flow Figures](figures/92761_figures.png) | [Network Topology](figures/92761_topology.png) |
+| 92762 | 1.00 | 1.00 6 | 0.10 198178 | 0 / 5 | 30 | 21 | -19, -9 | 0 | radial | [Load flow Figures](figures/92762_figures.png) | [Network Topology](figures/92762_topology.png) |
+| 92763 | 1.00 | 0.93 220 | 0.40 167161 | 0 / 221 | 161 | 111 | -98, -48 | 0 | radial | [Load flow Figures](figures/92763_figures.png) | [Network Topology](figures/92763_topology.png) |
+| 92764 | 1.00 | 0.98 156 | 0.16 202069 | 0 / 179 | 124 | 86 | -77, -37 | 0 | radial | [Load flow Figures](figures/92764_figures.png) | [Network Topology](figures/92764_topology.png) |
+| 92765 | 1.00 | 0.99 31 | 0.05 198181 | 0 / 32 | 24 | 17 | -15, -7 | 0 | mesh | [Load flow Figures](figures/92765_figures.png) | [Network Topology](figures/92765_topology.png) |
+| 92766 | 1.00 | 0.98 246 | 1.20 187110 | 1 / 291 | 308 | 212 | -189, -92 | 0 | radial | [Load flow Figures](figures/92766_figures.png) | [Network Topology](figures/92766_topology.png) |
+| 92767 | 1.00 | 0.99 44 | 0.20 175750 | 0 / 43 | 36 | 25 | -22, -11 | 0 | radial | [Load flow Figures](figures/92767_figures.png) | [Network Topology](figures/92767_topology.png) |
+| 92768 | 1.00 | 1.00 6 | 0.00 69344 | 0 / 10 | 0 | 0 | 0, 0 | 0 | radial | [Load flow Figures](figures/92768_figures.png) | [Network Topology](figures/92768_topology.png) |
+| 92769 | 1.00 | 0.96 56 | 0.22 169684 | 0 / 57 | 77 | 53 | -47, -23 | 0 | radial | [Load flow Figures](figures/92769_figures.png) | [Network Topology](figures/92769_topology.png) |
+| 92770 | 1.00 | 1.00 11 | 0.02 188367 | 0 / 11 | 5 | 4 | -3, -2 | 0 | radial | [Load flow Figures](figures/92770_figures.png) | [Network Topology](figures/92770_topology.png) |
+| 92771 | 1.00 | 0.99 34 | 0.21 196474 | 0 / 34 | 79 | 54 | -49, -24 | 0 | radial | [Load flow Figures](figures/92771_figures.png) | [Network Topology](figures/92771_topology.png) |
+| 92772 | 1.00 | 0.95 85 | 0.68 162791 | 0 / 84 | 147 | 101 | -90, -43 | 0 | radial | [Load flow Figures](figures/92772_figures.png) | [Network Topology](figures/92772_topology.png) |
+| 92773 | 1.00 | 1.00 9 | 0.25 197913 | 0 / 9 | 241 | 166 | -150, -72 | 0 | mesh | [Load flow Figures](figures/92773_figures.png) | [Network Topology](figures/92773_topology.png) |
+| 92775 | 1.00 | 1.00 14 | 0.01 198168 | 0 / 13 | 1 | 1 | -1, -0 | 0 | radial | [Load flow Figures](figures/92775_figures.png) | [Network Topology](figures/92775_topology.png) |
+| 92777 | 1.00 | 1.00 9 | 0.02 196190 | 0 / 9 | 6 | 4 | -4, -2 | 0 | radial | [Load flow Figures](figures/92777_figures.png) | [Network Topology](figures/92777_topology.png) |
+| 92778 | 1.00 | 1.00 10 | 0.12 198191 | 0 / 9 | 35 | 24 | -22, -11 | 0 | radial | [Load flow Figures](figures/92778_figures.png) | [Network Topology](figures/92778_topology.png) |
+| 92779 | 1.00 | 0.97 96 | 0.54 195632 | 0 / 96 | 85 | 58 | -52, -25 | 0 | radial | [Load flow Figures](figures/92779_figures.png) | [Network Topology](figures/92779_topology.png) |
+| 92780 | 1.00 | 1.00 4 | 0.00 68388 | 0 / 10 | 0 | 0 | 0, 0 | 0 | radial | [Load flow Figures](figures/92780_figures.png) | [Network Topology](figures/92780_topology.png) |
+| 92781 | 1.00 | 1.00 5 | 0.00 202861 | 0 / 8 | 0 | 0 | 0, 0 | 0 | mesh | [Load flow Figures](figures/92781_figures.png) | [Network Topology](figures/92781_topology.png) |
+| 92782 | 1.00 | 0.97 147 | 0.29 170816 | 0 / 153 | 214 | 148 | -131, -64 | 0 | radial | [Load flow Figures](figures/92782_figures.png) | [Network Topology](figures/92782_topology.png) |
+| 92784 | 1.00 | 1.00 10 | 0.17 172186 | 0 / 11 | 123 | 85 | -76, -37 | 0 | mesh | [Load flow Figures](figures/92784_figures.png) | [Network Topology](figures/92784_topology.png) |
+| 92785 | 1.00 | 0.97 310 | 0.49 191578 | 0 / 310 | 267 | 184 | -163, -79 | 0 | radial | [Load flow Figures](figures/92785_figures.png) | [Network Topology](figures/92785_topology.png) |
+| 92786 | 1.00 | 0.95 224 | 0.37 197723 | 0 / 239 | 222 | 153 | -136, -66 | 0 | radial | [Load flow Figures](figures/92786_figures.png) | [Network Topology](figures/92786_topology.png) |
+| 92787 | 1.00 | 0.97 139 | 0.29 162869 | 0 / 145 | 124 | 85 | -76, -37 | 0 | radial | [Load flow Figures](figures/92787_figures.png) | [Network Topology](figures/92787_topology.png) |
+| 92788 | 1.00 | 0.97 110 | 0.62 195717 | 0 / 109 | 134 | 93 | -82, -40 | 0 | radial | [Load flow Figures](figures/92788_figures.png) | [Network Topology](figures/92788_topology.png) |
+| 92789 | 1.00 | 0.94 155 | 0.68 195592 | 0 / 157 | 114 | 79 | -69, -33 | 0 | radial | [Load flow Figures](figures/92789_figures.png) | [Network Topology](figures/92789_topology.png) |
+| 92790 | 1.00 | 0.94 231 | 0.69 169036 | 0 / 230 | 147 | 101 | -89, -43 | 0 | radial | [Load flow Figures](figures/92790_figures.png) | [Network Topology](figures/92790_topology.png) |
+| 92791 | 1.00 | 0.97 189 | 0.63 176067 | 0 / 188 | 181 | 125 | -111, -54 | 0 | radial | [Load flow Figures](figures/92791_figures.png) | [Network Topology](figures/92791_topology.png) |
+| 92792 | 1.00 | 1.00 12 | 0.17 189719 | 0 / 12 | 24 | 17 | -15, -7 | 0 | radial | [Load flow Figures](figures/92792_figures.png) | [Network Topology](figures/92792_topology.png) |
+| 92793 | 1.00 | 0.96 233 | 0.42 175690 | 0 / 238 | 206 | 142 | -126, -61 | 0 | radial | [Load flow Figures](figures/92793_figures.png) | [Network Topology](figures/92793_topology.png) |
+| 92794 | 1.00 | 0.96 319 | 0.66 172384 | 0 / 318 | 248 | 171 | -152, -74 | 0 | radial | [Load flow Figures](figures/92794_figures.png) | [Network Topology](figures/92794_topology.png) |
+| 92795 | 1.00 | 0.91 312 | 1.30 191036 | 1 / 313 | 246 | 170 | -147, -71 | 0 | radial | [Load flow Figures](figures/92795_figures.png) | [Network Topology](figures/92795_topology.png) |
+| 92796 | 1.00 | 1.00 51 | 0.06 174693 | 0 / 55 | 35 | 24 | -22, -11 | 0 | radial | [Load flow Figures](figures/92796_figures.png) | [Network Topology](figures/92796_topology.png) |
+| 92797 | 1.00 | 1.00 16 | 0.04 184952 | 0 / 16 | 18 | 12 | -11, -5 | 0 | radial | [Load flow Figures](figures/92797_figures.png) | [Network Topology](figures/92797_topology.png) |
+| 92798 | 1.00 | 0.95 136 | 0.20 166017 | 0 / 137 | 95 | 66 | -58, -28 | 0 | radial | [Load flow Figures](figures/92798_figures.png) | [Network Topology](figures/92798_topology.png) |
+| 92799 | 1.00 | 0.89 318 | 1.23 183799 | 1 / 317 | 246 | 170 | -147, -71 | 0 | radial | [Load flow Figures](figures/92799_figures.png) | [Network Topology](figures/92799_topology.png) |
+| 92800 | 1.00 | 0.99 19 | 0.05 162403 | 0 / 19 | 12 | 8 | -7, -4 | 0 | radial | [Load flow Figures](figures/92800_figures.png) | [Network Topology](figures/92800_topology.png) |
+| 92801 | 1.00 | 0.37 152 | 12.23 190511 | 7 / 158 | 257 | 177 | -99, -48 | 0 | radial | [Load flow Figures](figures/92801_figures.png) | [Network Topology](figures/92801_topology.png) |
+| 92802 | 1.00 | 0.99 70 | 0.23 188687 | 0 / 90 | 99 | 69 | -61, -30 | 0 | radial | [Load flow Figures](figures/92802_figures.png) | [Network Topology](figures/92802_topology.png) |
+| 92804 | 1.00 | 0.94 241 | 0.54 163251 | 0 / 240 | 185 | 128 | -112, -54 | 0 | radial | [Load flow Figures](figures/92804_figures.png) | [Network Topology](figures/92804_topology.png) |
+| 92805 | NaN | NaN 0 | NaN 0 | 0 / 0 | NaN | NaN | 0, 0 | 0 | topology error | [Load flow Figures](figures/92805_figures.png) | [Network Topology](figures/92805_topology.png) |
+| 92806 | 1.00 | 0.98 118 | 0.40 178618 | 0 / 118 | 87 | 60 | -53, -26 | 0 | radial | [Load flow Figures](figures/92806_figures.png) | [Network Topology](figures/92806_topology.png) |
+| 92807 | 1.00 | 0.91 333 | 1.44 191445 | 1 / 345 | 299 | 206 | -178, -86 | 0 | radial | [Load flow Figures](figures/92807_figures.png) | [Network Topology](figures/92807_topology.png) |
+| 92808 | 1.00 | 0.98 105 | 0.80 167572 | 0 / 114 | 159 | 110 | -97, -47 | 0 | mesh | [Load flow Figures](figures/92808_figures.png) | [Network Topology](figures/92808_topology.png) |
+| 92809 | 1.00 | 0.98 167 | 0.41 185835 | 0 / 169 | 198 | 137 | -122, -59 | 0 | radial | [Load flow Figures](figures/92809_figures.png) | [Network Topology](figures/92809_topology.png) |
+| 92811 | NaN | NaN 0 | NaN 0 | 0 / 0 | NaN | NaN | 0, 0 | 0 | topology error | [Load flow Figures](figures/92811_figures.png) | [Network Topology](figures/92811_topology.png) |
+| 92812 | 1.00 | 1.00 17 | 0.01 165419 | 0 / 19 | 1 | 1 | -1, -0 | 0 | radial | [Load flow Figures](figures/92812_figures.png) | [Network Topology](figures/92812_topology.png) |
+| 92813 | 1.00 | 0.95 45 | 0.26 188592 | 0 / 47 | 81 | 56 | -49, -24 | 0 | radial | [Load flow Figures](figures/92813_figures.png) | [Network Topology](figures/92813_topology.png) |
+| 92814 | 1.00 | 1.00 20 | 0.12 176046 | 0 / 21 | 54 | 37 | -33, -16 | 0 | radial | [Load flow Figures](figures/92814_figures.png) | [Network Topology](figures/92814_topology.png) |
+| 92815 | 1.00 | 0.98 205 | 0.43 185876 | 0 / 204 | 169 | 116 | -104, -50 | 0 | radial | [Load flow Figures](figures/92815_figures.png) | [Network Topology](figures/92815_topology.png) |
+| 92816 | 1.00 | 0.99 62 | 0.14 171733 | 0 / 92 | 69 | 47 | -43, -21 | 0 | radial | [Load flow Figures](figures/92816_figures.png) | [Network Topology](figures/92816_topology.png) |
+| 92817 | 1.00 | 1.00 15 | 0.07 188438 | 0 / 15 | 17 | 12 | -11, -5 | 0 | radial | [Load flow Figures](figures/92817_figures.png) | [Network Topology](figures/92817_topology.png) |
+| 92819 | 1.00 | 0.93 224 | 0.65 183712 | 0 / 223 | 205 | 142 | -124, -60 | 0 | radial | [Load flow Figures](figures/92819_figures.png) | [Network Topology](figures/92819_topology.png) |
+| 92820 | 1.00 | 0.97 238 | 0.52 195368 | 0 / 237 | 357 | 246 | -219, -106 | 0 | radial | [Load flow Figures](figures/92820_figures.png) | [Network Topology](figures/92820_topology.png) |
+| 92821 | 1.00 | 0.95 117 | 1.11 199739 | 1 / 117 | 79 | 55 | -48, -23 | 0 | radial | [Load flow Figures](figures/92821_figures.png) | [Network Topology](figures/92821_topology.png) |
+| 92822 | 1.00 | 0.97 245 | 0.42 165291 | 0 / 244 | 174 | 120 | -106, -51 | 0 | radial | [Load flow Figures](figures/92822_figures.png) | [Network Topology](figures/92822_topology.png) |
+| 92823 | 1.00 | 1.00 11 | 0.02 190178 | 0 / 10 | 2 | 1 | -1, -0 | 0 | radial | [Load flow Figures](figures/92823_figures.png) | [Network Topology](figures/92823_topology.png) |
+| 92824 | 1.00 | 0.97 40 | 0.34 189799 | 0 / 42 | 60 | 42 | -37, -18 | 0 | radial | [Load flow Figures](figures/92824_figures.png) | [Network Topology](figures/92824_topology.png) |
+| 92825 | 1.00 | 0.99 23 | 0.25 167744 | 0 / 22 | 76 | 52 | -47, -23 | 0 | radial | [Load flow Figures](figures/92825_figures.png) | [Network Topology](figures/92825_topology.png) |
+| 92826 | 1.00 | 0.99 85 | 0.30 164552 | 0 / 135 | 120 | 82 | -74, -36 | 0 | radial | [Load flow Figures](figures/92826_figures.png) | [Network Topology](figures/92826_topology.png) |
+| 92950 | 1.00 | 1.00 11 | 0.04 193866 | 0 / 10 | 8 | 5 | -5, -2 | 0 | radial | [Load flow Figures](figures/92950_figures.png) | [Network Topology](figures/92950_topology.png) |
+| 92951 | 1.00 | 0.99 16 | 0.05 194811 | 0 / 15 | 10 | 7 | -6, -3 | 0 | radial | [Load flow Figures](figures/92951_figures.png) | [Network Topology](figures/92951_topology.png) |
+| 93083 | 1.00 | 0.97 61 | 0.30 187778 | 0 / 61 | 66 | 46 | -40, -20 | 0 | radial | [Load flow Figures](figures/93083_figures.png) | [Network Topology](figures/93083_topology.png) |
+| 93464 | NaN | NaN 0 | NaN 0 | 0 / 0 | NaN | NaN | 0, 0 | 0 | topology error | [Load flow Figures](figures/93464_figures.png) | [Network Topology](figures/93464_topology.png) |
+| 93465 | 1.00 | 0.99 36 | 0.13 203244 | 0 / 35 | 29 | 20 | -18, -9 | 0 | radial | [Load flow Figures](figures/93465_figures.png) | [Network Topology](figures/93465_topology.png) |
+| 93466 | NaN | NaN 0 | NaN 0 | 0 / 0 | NaN | NaN | 0, 0 | 0 | topology error | [Load flow Figures](figures/93466_figures.png) | [Network Topology](figures/93466_topology.png) |
+| 193818 | 1.00 | 1.00 36 | 0.27 195362 | 0 / 36 | 63 | 44 | -39, -19 | 0 | radial | [Load flow Figures](figures/193818_figures.png) | [Network Topology](figures/193818_topology.png) |
+| 194084 | 1.00 | 1.00 9 | 0.05 196131 | 0 / 8 | 11 | 8 | -7, -3 | 0 | radial | [Load flow Figures](figures/194084_figures.png) | [Network Topology](figures/194084_topology.png) |
+| 194281 | 1.00 | 1.00 4 | 0.00 102839 | 0 / 12 | 0 | 0 | 0, -0 | 0 | radial | [Load flow Figures](figures/194281_figures.png) | [Network Topology](figures/194281_topology.png) |
+| 194705 | NaN | NaN 0 | NaN 0 | 0 / 0 | NaN | NaN | 0, 0 | 0 | topology error | [Load flow Figures](figures/194705_figures.png) | [Network Topology](figures/194705_topology.png) |
+| 195304 | 1.00 | 1.00 6 | 0.04 200338 | 0 / 5 | 15 | 10 | -9, -5 | 0 | radial | [Load flow Figures](figures/195304_figures.png) | [Network Topology](figures/195304_topology.png) |
+| 195692 | 1.00 | 1.00 21 | 0.02 199890 | 0 / 20 | 7 | 5 | -4, -2 | 0 | radial | [Load flow Figures](figures/195692_figures.png) | [Network Topology](figures/195692_topology.png) |
+| 197506 | 1.00 | 1.00 11 | 0.04 204192 | 0 / 12 | 23 | 16 | -15, -7 | 0 | radial | [Load flow Figures](figures/197506_figures.png) | [Network Topology](figures/197506_topology.png) |
+| 198309 | 1.00 | 1.00 14 | 0.13 203467 | 0 / 14 | 45 | 31 | -28, -14 | 0 | radial | [Load flow Figures](figures/198309_figures.png) | [Network Topology](figures/198309_topology.png) |
+| 199724 | 1.00 | 0.96 234 | 0.47 190047 | 0 / 238 | 214 | 148 | -131, -63 | 0 | mesh | [Load flow Figures](figures/199724_figures.png) | [Network Topology](figures/199724_topology.png) |
+| 199872 | 1.00 | 1.00 4 | 0.00 102855 | 0 / 10 | 0 | 0 | 0, 0 | 0 | radial | [Load flow Figures](figures/199872_figures.png) | [Network Topology](figures/199872_topology.png) |

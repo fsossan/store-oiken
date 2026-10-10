@@ -1,0 +1,4 @@
+id_CAT,type_CAT,idFAB_CAT,categorie_CAT,section_CAT,courantAdmissible_CAT,courantAdm24Heures_CAT,resLineique_CAT,indLineique_CAT,capLineique_CAT,idEXT_CAT,sectionAffiche_CAT,typeObjet_CAT,uniTri_CAT,materiel_CAT,idNIV_CAT,nbTerne_CAT,noCondUnipol_CAT,sectionPEN_CAT,materielPEN_CAT,caractere_CAT,sectionConducteur_CAT
+433,GKN 3x1x150/50,NULL,NULL,150,375,375,0.145,0.111,0,NULL,150C,GKN,1,Cu,1,NULL,3,50,Cu,/,150
+2,Inconnu,NULL,BT-câble triphasé,999,300,300,0.3,0.2,0,BT000000000006,999,Inconnu,3,Cu,1,NULL,NULL,NULL,Cu,NULL,999
+3,GKN 3x50/50C,NULL,BT-câble triphasé,50,200,200,0.448,0.131,0,BT000000000009,50C,GKN,3,Cu,1,NULL,NULL,50,Cu,/,50

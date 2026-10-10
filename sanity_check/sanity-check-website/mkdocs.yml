@@ -1,0 +1,9 @@
+site_name: Sanity check
+
+nav:
+   - Home: index.md
+   - Networks: 
+       - Sion networks: Sion_networks.md
+       - Sierre networks: Sierre_networks.md
+extra_javascript:
+ - js/custom.js  # relative to the docs/ folder

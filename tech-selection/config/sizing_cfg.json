@@ -1,0 +1,84 @@
+{
+  "costs": {
+    "cE_per_kWh": 300,
+    "cS_per_kW": 100,
+    "cI_fixed": 2000
+  },
+  "converter": {
+    "kP": 0.98
+  },
+  "transformer": {
+    "kP_tr": 0.98
+  },
+  "horizon": {
+    "days": 1,
+    "Ts_h": 0.25
+  },
+  "solver": {
+    "MAX_LIN_ITER_milp": 1,
+    "VOLT_CONV_THRESH": 0.001,
+    "VMAG_LB": 0.001,
+    "VMAG_UB": 200,
+    "V_MIN": 0.9,
+    "V_MAX": 1.1,
+    "tol_num": 1e-08,
+    "current_mag_cstr": true,
+    "cha_dis_penalty_eps": 1e-05,
+    "cha_dis_rating_thresh": 0.01,
+    "apply_gurobi_settings": true,
+    "gurobi": {
+      "MIPGap": 1e-06,
+      "FeasibilityTol": 1.4901161193847656e-08,
+      "OptimalityTol": 1.4901161193847656e-08,
+      "BarConvTol": 1.4901161193847656e-08,
+      "BarQCPConvTol": 1.4901161193847656e-08
+    }
+  },
+  "economics": {
+    "energy_price_CHF_per_kWh": 0.15,
+    "curtailment_price_CHF_per_kWh": 0.1,
+    "throughput_loss_price_CHF_per_kWh": 0.15
+  },
+  "flags": {
+    "cha_dis_bin_activate": true,
+    "min_loss": true,
+    "siting_activate": true,
+    "one_tech_per_node": true,
+    "curtailment_activate": false,
+    "throughput_penalty": true,
+    "save_opf_output": true,
+    "lossless_bess": false
+  },
+  "demand_profile": {
+    "enabled": true,
+    "train_file": "load_consumption_train_heapo.mat",
+    "fact": -1,
+    "p_LB": 0,
+    "p_UB": 99,
+    "clip_residuals": true,
+    "GMM_order": 4,
+    "log_residuals": true,
+    "num_clusters": 5,
+    "weekday": "all",
+    "season": "all",
+    "seed_offset": 5675,
+    "fit_seed": 1,
+    "allow_ts_downsample": true
+  },
+  "pv_profile": {
+    "enabled": true,
+    "file": "pv_profiles_year.mat",
+    "series": "clearsky",
+    "season": "all",
+    "scale": 1,
+    "allow_ts_downsample": true
+  },
+  "ev_profile": {
+    "enabled": true,
+    "dt_minutes": 15,
+    "charger_kw": 11,
+    "seed_offset": 1230,
+    "force_single_ev_per_node": false,
+    "synchronized_arrivals": false
+  }
+}

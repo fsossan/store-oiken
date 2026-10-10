@@ -1,0 +1,49 @@
+# ---- Database backups & dumps (far too large for git) ----
+*.bak
+*.bacpac
+*.mdf
+*.ldf
+*.ndf
+*.trn
+*.dmp
+*.dump
+*.sqlite
+*.sqlite3
+*.db
+
+# ---- Credentials / connection settings ----
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets.*
+connection_string.txt
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.ipynb_checkpoints/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ---- Editors / OS ----
+.DS_Store
+Thumbs.db
+*.swp
+
+# ---- Large or regenerable outputs ----
+# Small sample exports are tracked on purpose; anything bulky goes here.
+output/
+exports/
+data/raw/
+*.parquet
+*.feather
+*.zip
+*.7z
+*.tar.gz

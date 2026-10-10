@@ -1,0 +1,32 @@
+{
+  "tech": [
+    {
+      "name": "LiIon",
+      "c_rate":    1.1,
+      "eta_ch":    0.9,
+      "eta_dis":   0.9,
+      "Emax_pu":   40,
+      "Smax_pu":   40,
+      "life_span": 15,
+      "costs": {
+        "cE_per_kWh": 300,
+        "cS_per_kW": 100,
+        "cI_fixed": 2000
+      }
+    },
+    {
+      "name": "NaIon",
+      "c_rate":    5,
+      "eta_ch":    0.85,
+      "eta_dis":   0.85,
+      "Emax_pu":   40,
+      "Smax_pu":   40,
+      "life_span": 15,
+      "costs": {
+        "cE_per_kWh": 300,
+        "cS_per_kW": 100,
+        "cI_fixed": 2000
+      }
+    }
+  ]
+}

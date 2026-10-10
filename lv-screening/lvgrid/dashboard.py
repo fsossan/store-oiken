@@ -130,7 +130,7 @@ def portfolio_page(summary: pd.DataFrame, run: dict, main_case: str, pages: dict
     title = "LV portfolio sanity check (one-shot)" if oneshot else f"LV portfolio screening, scenario {run['scenario']}"
     parts = [f"<h1>{html.escape(title)}</h1>",
              f"<p class='sub'>{n} networks, created {run['created'][:16].replace('T', ' ')}, {run['seconds']} s. "
-             + (f"Snapshot: {cfg['oneshot']['demand_factor']:.0%} of fuse-rated peak at every connection, "
+             + (f"Snapshot: {cfg['demand_factor']:.0%} of fuse-rated peak at every connection, "
                 f"{cfg['oneshot']['generation_factor']:.0%} of existing PV." if oneshot else
                 f"Cases: {', '.join(cases)}; metrics below for <b>{main_case}</b>. "
                 f"Scenario PV {run['allocation']['pv_region_kwp'] / 1e3:,.0f} MWp and {run['allocation']['ev_region']:,} EVs "
@@ -145,7 +145,7 @@ def portfolio_page(summary: pd.DataFrame, run: dict, main_case: str, pages: dict
     kpis = [(f"{counts.get('ok', 0)}", "networks ok"), (f"{counts.get('violation', 0)}", "with violations"),
             (f"{counts.get('not_converged', 0)}", "load flow not converged"),
             (f"{counts.get('topology_error', 0) + counts.get('build_error', 0)}", "topology / data errors"),
-            (f"{dem.sum() / 1e3:,.1f} MW", f"nominal demand ({cfg['demand']['demand_factor']:.0%} of fuse-rated peak)"),
+            (f"{dem.sum() / 1e3:,.1f} MW", f"nominal demand ({cfg['demand_factor']:.0%} of fuse-rated peak)"),
             (f"{s[pv_col].fillna(0).sum() / 1e3:,.1f} MWp", "existing PV" if oneshot else "scenario PV"),
             ]
     if not oneshot:
@@ -153,26 +153,24 @@ def portfolio_page(summary: pd.DataFrame, run: dict, main_case: str, pages: dict
     kpis.append((f"{100 * dem[viol].sum() / max(dem.sum(), 1e-9):.0f} %", "of nominal demand in networks with violations"))
     parts.append("<div class='kpis'>" + "".join(f"<div class='kpi'><div class='v'>{v}</div><div class='l'>{l}</div></div>" for v, l in kpis) + "</div>")
 
-    # status per case + violation kinds per case
-    fig = make_subplots(rows=1, cols=2, subplot_titles=("Network status per case", "Networks with each violation kind"),
-                        horizontal_spacing=0.12)
+    # status per case (stacked) and violation kinds per case (grouped: the cases are nested, not additive)
+    fig_a = go.Figure()
     for st in STATUS_ORDER:
         vals = [int((summary[summary["case"] == c]["status"] == st).sum()) for c in cases]
         if sum(vals):
-            fig.add_bar(x=vals, y=cases, orientation="h", name=STATUS_LABEL[st].replace("&#10003;", "✓").replace("&#10007;", "✗"),
-                        marker_color=C[st], marker_line=dict(color=C["surface"], width=2), row=1, col=1,
-                        hovertemplate="%{y}: %{x} networks<extra>" + st + "</extra>")
+            fig_a.add_bar(x=vals, y=cases, orientation="h", name=STATUS_LABEL[st].replace("&#10003;", "✓").replace("&#10007;", "✗"),
+                          marker_color=C[st], marker_line=dict(color=C["surface"], width=2),
+                          hovertemplate="%{y}: %{x} networks<extra>" + st + "</extra>")
+    fig_a.update_layout(barmode="stack", bargap=0.35, title=dict(text="Network status per case", font_size=14), xaxis_title="networks")
+    fig_b = go.Figure()
     series_colors = [C["demand"], C["pv"], C["ev"]]
     for i, c in enumerate(cases):
         v = summary[summary["case"] == c]["violation_types"].fillna("")
-        fig.add_bar(x=VIOLATION_KINDS, y=[int(v.str.contains(k).sum()) for k in VIOLATION_KINDS], name=c,
-                    marker_color=series_colors[i % 3], marker_line=dict(color=C["surface"], width=2), row=1, col=2,
-                    hovertemplate="%{x}: %{y} networks<extra>" + c + "</extra>")
-    fig.update_layout(barmode="stack", bargap=0.35)
-    fig.update_layout({"barmode": "stack"})
-    fig.update_traces(selector=dict(xaxis="x2"), offsetgroup=None)
-    fig.layout.barmode = "stack"
-    parts.append("<h2>Status</h2>" + _fig(fig, height=320))
+        fig_b.add_bar(x=VIOLATION_KINDS, y=[int(v.str.contains(k).sum()) for k in VIOLATION_KINDS], name=c,
+                      marker_color=series_colors[i % 3], marker_line=dict(color=C["surface"], width=2),
+                      hovertemplate="%{x}: %{y} networks<extra>" + c + "</extra>")
+    fig_b.update_layout(barmode="group", bargap=0.3, title=dict(text="Networks with each violation kind", font_size=14), yaxis_title="networks")
+    parts.append("<h2>Status</h2><div class='row'>" + _fig(fig_a, height=320) + _fig(fig_b, height=320) + "</div>")
 
     # distributions
     ok = s[s["status"].isin(["ok", "violation"])]
@@ -346,7 +344,7 @@ def network_page(nid: str, det: dict, rows: pd.DataFrame, run: dict, main_case: 
     facts = [("nodes / lines / length", f"{int(r['n_nodes'])} / {int(r['n_lines'])} / {r['line_length_km']:.2f} km"),
              ("transformer", f"{trafo:.0f} kVA" + (f" ({int(r['n_transformers'])} units)" if r["n_transformers"] > 1 else "")),
              ("fuse-rated peak (sum)", f"{r['plmax_sum_kw']:.0f} kW at {int(r['n_demand_nodes'])} connections"),
-             (f"nominal demand ({cfg['demand']['demand_factor']:.0%})", f"{nd:.0f} kW = {100 * nd / trafo:.0f} % of the transformer"),
+             (f"nominal demand ({cfg['demand_factor']:.0%})", f"{nd:.0f} kW = {100 * nd / trafo:.0f} % of the transformer"),
              ("existing PV", f"{r['existing_pv_kw']:.0f} kW")]
     if not oneshot:
         facts += [("scenario PV", f"{r['pv_kwp']:.0f} kWp = {100 * r['pv_kwp'] / max(nd, 1e-9):.0f} % of nominal demand, {100 * r['pv_kwp'] / trafo:.0f} % of the transformer"),
@@ -357,14 +355,14 @@ def network_page(nid: str, det: dict, rows: pd.DataFrame, run: dict, main_case: 
     parts.append("<div class='row'><div class='card'><h2 style='margin-top:0'>Network</h2>" + _facts(facts) + "</div>")
 
     # case comparison
-    head = "<tr><th>case</th><th>status</th><th>converged steps</th><th>min V [pu] (node)</th><th>UV nodes</th><th>max line loading (line)</th><th>overloaded lines</th><th>trafo loading</th><th>losses kWh</th></tr>"
+    head = "<tr><th>case</th><th>status</th><th>converged steps</th><th>min V [pu] (node)</th><th>UV nodes</th><th>max line loading (line)</th><th>overloaded lines</th><th>trafo loading</th><th>mean losses kW</th></tr>"
     body = ""
     for c in cases:
         q = rows[rows["case"] == c].iloc[0]
         body += (f"<tr><td>{c}</td><td>{_badge(q['status'])}</td><td>{int(q['converged_steps'])}/{int(q['n_steps'])}</td>"
                  f"<td>{q['v_min']:.3f} ({html.escape(str(q['v_min_node']))})</td><td>{int(q['n_undervolt_nodes'])}</td>"
                  f"<td>{q['line_max_loading']:.2f} ({html.escape(str(q['line_max_id']))})</td><td>{int(q['n_overloaded_lines'])}</td>"
-                 f"<td>{q['trafo_max_loading']:.2f}</td><td>{q['losses_kwh']:.1f}</td></tr>"
+                 f"<td>{q['trafo_max_loading']:.2f}</td><td>{q['losses_kw_mean']:.1f}</td></tr>"
                  if np.isfinite(q.get("v_min", np.nan)) else f"<tr><td>{c}</td><td>{_badge(q['status'])}</td><td colspan='7'>no converged step</td></tr>")
     parts.append(f"<div class='card'><h2 style='margin-top:0'>Cases</h2><table>{head}{body}</table></div></div>")
 

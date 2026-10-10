@@ -187,7 +187,7 @@ def main(argv=None):
     if dup.any():
         conflict = df[dup].groupby("id_nod").agg(nx=("x_db", "nunique"), ny=("y_db", "nunique"))
         n_conf = int(((conflict.nx > 1) | (conflict.ny > 1)).sum())
-        print(f"{int(dup.sum())} duplicate row images for {dup.sum() and df[dup].id_nod.nunique()} ids "
+        print(f"{int(dup.sum())} row images for {df[dup].id_nod.nunique()} duplicated ids "
               f"({n_conf} with differing coordinates); keeping the last image", file=sys.stderr)
     df = df.drop_duplicates("id_nod", keep="last").sort_values("id_nod").reset_index(drop=True)
     df["E_lv95"], df["N_lv95"] = to_lv95(df.x_db, df.y_db)

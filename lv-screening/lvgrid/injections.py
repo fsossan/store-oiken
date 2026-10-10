@@ -42,25 +42,20 @@ class Injections:
 class ProfileSource:
     """Loads the demand model and the PV day once for a whole run."""
 
-    def __init__(self, cfg: dict, demand: bool = True, pv: bool = True):
+    def __init__(self, cfg: dict):
         self.cfg = cfg
         self.step_min = cfg["time"]["step_min"]
         self.S = 24 * 60 // self.step_min
-        self.model = None
-        self.pv_day = None
-        self.pv_date = None
-        if demand:
-            path = resolve(cfg["demand"]["model_file"])
-            if not path.exists():
-                raise FileNotFoundError(f"demand model {path} missing: run `python -m lvgrid fit-demand` first")
-            self.model = load_demand_model(path)
-            if int(self.model["steps_per_day"]) != self.S:
-                raise ValueError("demand model resolution differs from time.step_min")
-        if pv:
-            pcfg = cfg["pv"]
-            year = load_pv_year(resolve(pcfg["file"]))
-            self.pv_day, self.pv_date, _ = pv_representative_day(year, pcfg["series"], pcfg["season"], self.step_min)
-            self.pv_day = self.pv_day * pcfg.get("scale", 1.0)
+        path = resolve(cfg["demand"]["model_file"])
+        if not path.exists():
+            raise FileNotFoundError(f"demand model {path} missing: run `python -m lvgrid fit-demand` first")
+        self.model = load_demand_model(path)
+        if int(self.model["steps_per_day"]) != self.S:
+            raise ValueError("demand model resolution differs from time.step_min")
+        pcfg = cfg["pv"]
+        year = load_pv_year(resolve(pcfg["file"]))
+        self.pv_day, self.pv_date, _ = pv_representative_day(year, pcfg["series"], pcfg["season"], self.step_min)
+        self.pv_day = self.pv_day * pcfg.get("scale", 1.0)
 
 
 def build_injections(net: Network, src: ProfileSource, n_days: int = 1) -> Injections:
@@ -71,11 +66,11 @@ def build_injections(net: Network, src: ProfileSource, n_days: int = 1) -> Injec
     dcfg, ecfg = cfg["demand"], cfg["ev"]
 
     # demand
-    nominal = dcfg["demand_factor"] * (net.plmax_kw + 1j * net.qlmax_kvar)
+    nominal = cfg["demand_factor"] * (net.plmax_kw + 1j * net.qlmax_kvar)
     has_d = np.flatnonzero(nominal.real > 0)
     demand = np.zeros((T, N), complex)
     clusters = np.zeros(N, int)
-    if len(has_d) and src.model is not None:
+    if len(has_d):
         rng = np.random.default_rng(net.num + dcfg["seed_offset"])
         shape, cl = sample_demand(src.model, len(has_d), n_days, rng)        # [n x D x S]
         demand[:, has_d] = (shape.reshape(len(has_d), T).T * nominal[has_d][None, :])
@@ -84,7 +79,7 @@ def build_injections(net: Network, src: ProfileSource, n_days: int = 1) -> Injec
     # PV
     pv = np.zeros((T, N))
     pv_kwp = net.pv_kwp if net.pv_kwp is not None else np.zeros(N)
-    if src.pv_day is not None and pv_kwp.sum() > 0:
+    if pv_kwp.sum() > 0:
         pv = np.tile(src.pv_day, n_days)[:, None] * pv_kwp[None, :]
 
     # EV (one day, repeated)

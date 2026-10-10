@@ -26,7 +26,7 @@ V_FLOOR = 0.05
 class LoadflowResult:
     V: np.ndarray          # [T x N] complex nodal voltages incl. slack (pu)
     I: np.ndarray          # [T x L] complex branch currents from->to (pu)
-    S_slack: np.ndarray    # [T] complex power supplied by the slack (pu, positive = into the network)
+    S_slack: np.ndarray    # [T] complex power supplied by the slack (pu, positive = import from MV)
     converged: np.ndarray  # [T] bool
     n_iter: int
 
@@ -76,6 +76,6 @@ def solve(net: Network, s_inj_pu: np.ndarray, cfg: dict) -> LoadflowResult:
             break
     V_all = np.vstack([np.full((1, T), V0), V])                 # [N x T]
     I0 = Y00 * V0 + Y0L @ V
-    S_slack = -(V0 * np.conj(I0))
+    S_slack = V0 * np.conj(I0)                                 # positive = supplied to the network
     I_br = net.y_edge[:, None] * (V_all[net.edge_from] - V_all[net.edge_to])
     return LoadflowResult(V=V_all.T, I=I_br.T, S_slack=S_slack, converged=converged, n_iter=n_iter)

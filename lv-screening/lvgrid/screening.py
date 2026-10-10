@@ -38,11 +38,8 @@ STATUSES = ["ok", "violation", "not_converged", "topology_error", "build_error"]
 
 
 # ------------------------------------------------------------------ scoring --
-def evaluate(net: Network, lf: LoadflowResult, cfg: dict, p_net_kw: np.ndarray) -> tuple[dict, dict]:
-    """Metrics of one load-flow run (T steps) and the arrays kept for the dashboard.
-
-    p_net_kw: [T] net consumption seen from the transformer (demand + EV - PV),
-    used for the loss estimate."""
+def evaluate(net: Network, lf: LoadflowResult, cfg: dict) -> tuple[dict, dict]:
+    """Metrics of one load-flow run (T steps) and the arrays kept for the dashboard."""
     lim = cfg["limits"]
     kW = kw_per_pu(cfg)
     T = len(lf.converged)
@@ -82,9 +79,8 @@ def evaluate(net: Network, lf: LoadflowResult, cfg: dict, p_net_kw: np.ndarray) 
                  trafo_overload_steps=int((tl > lim["trafo_loading_max"]).any(axis=1).sum()))
         m.update(slack_peak_import_kw=float(np.nanmax(np.r_[slack_kw, 0.0])),
                  slack_peak_export_kw=float(np.nanmax(np.r_[-slack_kw, 0.0])))
-        dt_h = cfg["time"]["step_min"] / 60.0
-        loss = slack_kw - p_net_kw
-        m["losses_kwh"] = float(np.nansum(loss) * dt_h) if T > 1 else float(np.nansum(loss))
+        loss_kw = (lf.imag ** 2 @ net.r_pu) * kW                       # I^2 R over all branches, per step
+        m["losses_kw_mean"] = float(loss_kw[conv].mean())
         kinds = []
         if m["n_undervolt_nodes"]:
             kinds.append("undervoltage")
@@ -115,7 +111,7 @@ def static_info(net: Network, cfg: dict) -> dict:
         "n_transformers": len(net.trafo_kva), "trafo_kva": float(net.trafo_kva.sum()),
         "line_length_km": float(net.length_m[lines].sum() / 1000), "is_radial": net.is_radial,
         "plmax_sum_kw": float(net.plmax_kw.sum()),
-        "nominal_demand_kw": float(cfg["demand"]["demand_factor"] * net.plmax_kw.sum()),
+        "nominal_demand_kw": float(cfg["demand_factor"] * net.plmax_kw.sum()),
         "n_demand_nodes": int((net.plmax_kw > 0).sum()),
         "existing_pv_kw": float(net.pg_kw.sum()),
         "pv_kwp": float(net.pv_kwp.sum()) if net.pv_kwp is not None else 0.0,
@@ -190,13 +186,11 @@ def run(portfolio: Portfolio, cfg: dict, ids: list[str], mode: str, scenario: st
             detail.update(lat=lat, lon=lon, located=located)
 
         if mode == "oneshot":
-            oc = cfg["oneshot"]
-            s_kw = -oc["demand_factor"] * (net.plmax_kw + 1j * net.qlmax_kvar) + oc["generation_factor"] * net.pg_kw
+            gf = cfg["oneshot"]["generation_factor"]
+            s_kw = -cfg["demand_factor"] * (net.plmax_kw + 1j * net.qlmax_kvar) + gf * net.pg_kw
             lf = solve(net, (s_kw[1:] / kw_per_pu(cfg))[None, :], cfg)
-            p_net = np.array([-s_kw.real.sum()])
-            m, arrays = evaluate(net, lf, cfg, p_net)
-            rows.append({**info, "case": "oneshot", **m, "demand_kw": float(-s_kw.real.sum() + oc["generation_factor"] * net.pg_kw.sum()),
-                         "pv_kw": float(oc["generation_factor"] * net.pg_kw.sum())})
+            m, arrays = evaluate(net, lf, cfg)
+            rows.append({**info, "case": "oneshot", **m, "pv_kw": float(gf * net.pg_kw.sum())})
             detail.update({f"oneshot:{k}": v for k, v in arrays.items()})
         else:
             inj = build_injections(net, src, n_days)
@@ -211,8 +205,8 @@ def run(portfolio: Portfolio, cfg: dict, ids: list[str], mode: str, scenario: st
             for c in cases:
                 s_pu = case_injection_pu(inj, c, cfg)
                 lf = solve(net, s_pu, cfg)
-                p_net = -(s_pu.real.sum(axis=1)) * kw_per_pu(cfg)
-                m, arrays = evaluate(net, lf, cfg, p_net)
+                p_net = -(s_pu.real.sum(axis=1)) * kw_per_pu(cfg)               # net consumption of the nodes
+                m, arrays = evaluate(net, lf, cfg)
                 rows.append({**base, "case": c, **m,
                              "net_peak_import_kw": float(np.max(np.r_[p_net, 0])),
                              "net_peak_export_kw": float(np.max(np.r_[-p_net, 0]))})

@@ -273,7 +273,7 @@ def build_network(network_id: str, lines: pd.DataFrame, subs: pd.DataFrame, cfg:
         issues.append("meshed (more lines than nodes - 1)")
     if (amp <= 0).any():
         issues.append(f"{int((amp <= 0).sum())} line(s) without ampacity")
-    if plmax.sum() > 0 and net.trafo_kva.sum() > 0 and plmax.sum() * cfg["oneshot"]["demand_factor"] > net.trafo_kva.sum():
+    if plmax.sum() > 0 and net.trafo_kva.sum() > 0 and plmax.sum() * cfg["demand_factor"] > net.trafo_kva.sum():
         issues.append("planning demand (demand_factor x fuse-rated peak) exceeds transformer rating")
     return net
 

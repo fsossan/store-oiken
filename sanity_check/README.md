@@ -1,5 +1,7 @@
 # sanity_check: LV portfolio sanity check and scenario load flows
 
+> **Superseded (2026-10-11):** stages 4–7 of this toolbox are re-implemented in Python in [`../lv-screening/`](../lv-screening/README.md), which reads the same `data_v2.mat` (exported once to CSV) and reproduces the one-shot classification. Stages 1–3 (reading the OIKEN Excel files and patching line/transformer parameters) are still only here.
+
 This MATLAB toolbox screens the low-voltage (LV) networks of Sierre and Sion (1,116 networks, OIKEN data) in two steps:
 1. **One-shot load flow:** a simple snapshot to catch data or model errors.
 2. **Temporal load flow:** 24 h at 15 min, with stochastic household demand plus PV and EV allocated from the SFOE 2030/2040 scenarios. It shows which networks need reinforcement.

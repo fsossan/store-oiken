@@ -5,6 +5,18 @@ changed on 2026-10-10, what was verified where, what to run next, and the plans
 that were agreed but not built. The detailed design notes are in
 `docs/DEVELOPMENT_NOTES.md`; the user-facing overview is `README.md`.
 
+## 0. Update 2026-10-11: stage 1 and the screening moved to Python
+
+The plans of sections 6 and 7 were implemented in Python instead, in
+`../lv-screening/` (see its README): data sanity check (one-shot load flow),
+scenario injections (demand GMM, PV representative day, EV), daily load-flow
+screening with three nested cases, HTML dashboard with topology maps, node
+coordinates recovered from the DSO database backup, and a clear-sky PV
+utility. `run_portfolio_report` / `build_nodal_injections` here remain the
+inputs of the MILP; the Python screening is the place to derive the per-
+scenario violation list (`violation_ids_<scenario>.mat` is still generated
+nowhere in MATLAB). Computation of the MILP stays in MATLAB.
+
 ## 1. State of the repository
 
 **Nothing from 2026-10-10 is committed.** All changes are in the working tree

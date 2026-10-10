@@ -1,0 +1,8 @@
+# Python 3.10+; tested with the versions below on 2026-10-11
+numpy>=1.26
+scipy>=1.11
+pandas>=2.1
+scikit-learn>=1.3     # fitting the demand model only
+plotly>=5.24          # dashboard (go.Scattermap needs >= 5.24)
+networkx>=3.1         # topology layout when a network has no coordinates
+pvlib>=0.10           # clear-sky PV profiles only

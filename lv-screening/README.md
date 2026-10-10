@@ -68,11 +68,19 @@ collapse onto the transformer's LV node; feeders behind open switches are
 pruned; transformer R/X are rebased to the common base; constant-power loads;
 fixed-point (Z-bus) load flow with damping 0.7, vectorised over the 96 steps.
 This is a port of the MATLAB `combined_lv_sub_SFOE` / `get_grid_SFOE` /
-`loadflow_FPIs_convergance` chain with two deliberate changes: the slack is
+`loadflow_FPIs_convergance` chain with three deliberate changes: the slack is
 always internal node 0 (the MATLAB code assumed node 1, wrong for 15 networks
-whose transformer row is stored LV→MV), and a step is declared non-converged
+whose transformer row is stored LV→MV); transformers whose LV nodes sit on the
+same closed-switch busbar are connected in parallel (103 of the 194
+multi-transformer networks; the MATLAB code hung every feeder on the last
+transformer and left the others idle); and a step is declared non-converged
 only after 100 iterations or a non-finite voltage (the MATLAB abort on a
-growing error killed heavily loaded but solvable networks).
+growing error killed heavily loaded but solvable networks). Transformer
+import/export and losses (I²R over all branches) come from the load flow.
+Small print: EV sessions are cut at midnight (arrivals up to 21:00 + 4 h), so
+about 1.5 % of the EV energy is lost; PV and EVs allocated to nodes behind
+open switches or in networks that cannot be built are not simulated
+(`run.json` lists target and applied totals).
 
 **Results folder.** `summary.csv` has one row per network and case: static
 data (nodes, lines, transformer kVA, fuse-rated peak, nominal demand, existing
@@ -134,13 +142,16 @@ load-flow tolerances, demand/PV/EV profile parameters, SFOE scenario table).
 * One-shot, all 1116 networks: same classification as `sanity_check`
   (1036 ok, 47 violation, 24 + 2 not converged / no transformer, 7 topology
   errors); lowest voltages agree within the legacy table's rounding (median
-  0.002 pu), overloaded-line counts are identical.
-* sc1_2040 on the 1036 healthy networks: 309 networks with violations (legacy
-  284), 12 not fully converged (legacy 11); violation kinds 160 undervoltage /
-  39 overvoltage / 221 line / 207 transformer (legacy 147 / 45 / 263 / 163).
+  0.002 pu), overloaded-line counts are identical. Transformer loadings of the
+  194 multi-transformer networks are lower than in MATLAB (parallel
+  transformers, see "Model").
+* sc1_2040 on the 1036 healthy networks: 305 networks with violations (legacy
+  284), 12 not fully converged (legacy 11); violation kinds 159 undervoltage /
+  39 overvoltage / 221 line / 193 transformer (legacy 147 / 45 / 263 / 163).
   The individual networks differ because demand and EV draws are different
-  random realisations and because the legacy run charged one vehicle per EV
-  node regardless of the allocated count.
+  random realisations, because the legacy run charged one vehicle per EV node
+  regardless of the allocated count, and because parallel transformers now
+  share their load.
 * Two networks (LV_Grid_442, LV_Grid_5490) are reported converged by the
   legacy table but oscillate at any damping here: they are loaded beyond the
   fixed-point method's limit (lowest voltage < 0.6 pu, several overloaded

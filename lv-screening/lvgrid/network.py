@@ -28,6 +28,7 @@ import numpy as np
 import pandas as pd
 
 from .config import base_impedance_ohm
+from .data import network_number
 
 EDGE_LINE, EDGE_TRAFO, EDGE_MVBUS = 0, 2, 3
 MIN_IMPEDANCE_PU = 1e-5
@@ -55,9 +56,9 @@ class Network:
     trafo_kva: np.ndarray                # [n_trafo] ratings
     trafo_edges: np.ndarray              # [n_trafo] edge indices
     Y: np.ndarray                        # [N x N] complex nodal admittance, pu
+    pv_kwp: np.ndarray                   # [N] scenario PV (allocation), 3-phase kWp; zeros until apply_allocation
+    ev_count: np.ndarray                 # [N] scenario EV count
     issues: list[str] = field(default_factory=list)
-    pv_kwp: np.ndarray = None            # [N] scenario PV (allocation), 3-phase kWp; zeros until apply_allocation
-    ev_count: np.ndarray = None          # [N] scenario EV count
 
     # ---- derived -------------------------------------------------------
     @property
@@ -74,11 +75,28 @@ class Network:
 
     @property
     def is_radial(self) -> bool:
-        return self.n_edges == self.n_nodes - 1
+        """True when the LV lines form a forest (no loops, no parallel branches)."""
+        lines = self.edge_type == EDGE_LINE
+        ef, et = self.edge_from[lines], self.edge_to[lines]
+        parent = {n: n for n in set(ef) | set(et)}
+
+        def find(x):
+            while parent[x] != x:
+                parent[x] = parent[parent[x]]
+                x = parent[x]
+            return x
+
+        n_comp = len(parent)
+        for a, b in zip(ef, et):
+            ra, rb = find(a), find(b)
+            if ra != rb:
+                parent[ra] = rb
+                n_comp -= 1
+        return len(ef) == len(parent) - n_comp
 
     @property
     def num(self) -> int:
-        return int("".join(ch for ch in self.id if ch.isdigit()))
+        return network_number(self.id)
 
     def reachable_from_slack(self) -> np.ndarray:
         """Boolean [N]: node connected to the slack through the edge list."""
@@ -140,6 +158,10 @@ def build_network(network_id: str, lines: pd.DataFrame, subs: pd.DataFrame, cfg:
             issues.append("no shared MV bus found; using largest transformer's MV node")
 
     # ---- 3. collapse closed LV switches onto the transformer LV node -------
+    # Every node of the closed-switch component of a transformer's LV node is
+    # that LV node. Transformers whose LV nodes share one component end up on
+    # the same node, i.e. in parallel (the MATLAB code hung every feeder on the
+    # last transformer instead).
     closed = lv_sw[lv_sw["on_off"] == 1]
     adj: dict[str, list[str]] = {}
     for a, b in zip(closed["from"], closed["to"]):
@@ -147,6 +169,8 @@ def build_network(network_id: str, lines: pd.DataFrame, subs: pd.DataFrame, cfg:
         adj.setdefault(b, []).append(a)
     collapse: dict[str, str] = {}
     for t in trl:
+        if t in collapse:
+            continue
         seen = {t}
         q = deque([t])
         while q:
@@ -155,7 +179,13 @@ def build_network(network_id: str, lines: pd.DataFrame, subs: pd.DataFrame, cfg:
                 if v not in seen:
                     seen.add(v)
                     q.append(v)
-                    collapse[v] = t
+        for v in seen - {t}:
+            collapse[v] = t
+    n_lv_nodes = len({collapse.get(t, t) for t in trl})
+    if n_lv_nodes < len(set(trl)):
+        issues.append(f"{len(trl)} transformers on {n_lv_nodes} LV busbar(s) (in parallel)")
+    trafo["from"] = trafo["from"].map(lambda s: collapse.get(s, s))
+    trafo["to"] = trafo["to"].map(lambda s: collapse.get(s, s))
     lv_from = lines["from"].map(lambda s: collapse.get(s, s)).to_numpy()
     lv_to = lines["to"].map(lambda s: collapse.get(s, s)).to_numpy()
 
@@ -258,10 +288,8 @@ def build_network(network_id: str, lines: pd.DataFrame, subs: pd.DataFrame, cfg:
         edge_type=etype, length_m=length, r_pu=r, x_pu=x, ampacity_a=amp,
         plmax_kw=plmax, qlmax_kvar=qlmax, pg_kw=pg,
         trafo_kva=trafo["rated_kva"].to_numpy(float), trafo_edges=np.flatnonzero(etype == EDGE_TRAFO),
-        Y=Y, issues=issues,
+        Y=Y, pv_kwp=np.zeros(N), ev_count=np.zeros(N, int), issues=issues,
     )
-    net.pv_kwp = np.zeros(N)
-    net.ev_count = np.zeros(N, int)
 
     # ---- 9. topology checks ------------------------------------------------
     if (edge_from == edge_to).any():
@@ -270,7 +298,7 @@ def build_network(network_id: str, lines: pd.DataFrame, subs: pd.DataFrame, cfg:
     if unreachable:
         issues.append(f"{unreachable} node(s) not connected to the slack")
     if not net.is_radial:
-        issues.append("meshed (more lines than nodes - 1)")
+        issues.append("meshed LV lines (loops or parallel branches)")
     if (amp <= 0).any():
         issues.append(f"{int((amp <= 0).sum())} line(s) without ampacity")
     if plmax.sum() > 0 and net.trafo_kva.sum() > 0 and plmax.sum() * cfg["demand_factor"] > net.trafo_kva.sum():

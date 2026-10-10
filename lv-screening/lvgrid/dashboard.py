@@ -23,6 +23,7 @@ from plotly.offline import get_plotlyjs
 from plotly.subplots import make_subplots
 
 from .config import DATA_DIR
+from .data import parse_ids
 
 C = {"demand": "#2a78d6", "pv": "#eb6834", "ev": "#1baf7a", "net": "#52514e",
      "ok": "#0ca30c", "violation": "#d03b3b", "not_converged": "#fab219",
@@ -31,9 +32,10 @@ C = {"demand": "#2a78d6", "pv": "#eb6834", "ev": "#1baf7a", "net": "#52514e",
      "surface": "#fcfcfb", "page": "#f9f9f7"}
 BLUE_RAMP = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"]
 ORANGE_RAMP = ["#f9d3c2", "#f3a784", "#eb6834", "#b8441c"]
-STATUS_LABEL = {"ok": "&#10003; ok", "violation": "&#10007; violation", "not_converged": "! not converged",
+STATUS_LABEL = {"ok": "✓ ok", "violation": "✗ violation", "not_converged": "! not converged",
                 "topology_error": "? topology error", "build_error": "? build error"}
 STATUS_ORDER = ["ok", "violation", "not_converged", "topology_error", "build_error"]
+WORST_FIRST = ["not_converged", "violation", "topology_error", "build_error", "ok"]
 VIOLATION_KINDS = ["undervoltage", "overvoltage", "line_overload", "trafo_overload"]
 
 CSS = """
@@ -158,7 +160,7 @@ def portfolio_page(summary: pd.DataFrame, run: dict, main_case: str, pages: dict
     for st in STATUS_ORDER:
         vals = [int((summary[summary["case"] == c]["status"] == st).sum()) for c in cases]
         if sum(vals):
-            fig_a.add_bar(x=vals, y=cases, orientation="h", name=STATUS_LABEL[st].replace("&#10003;", "✓").replace("&#10007;", "✗"),
+            fig_a.add_bar(x=vals, y=cases, orientation="h", name=STATUS_LABEL[st],
                           marker_color=C[st], marker_line=dict(color=C["surface"], width=2),
                           hovertemplate="%{y}: %{x} networks<extra>" + st + "</extra>")
     fig_a.update_layout(barmode="stack", bargap=0.35, title=dict(text="Network status per case", font_size=14), xaxis_title="networks")
@@ -379,7 +381,8 @@ def network_page(nid: str, det: dict, rows: pd.DataFrame, run: dict, main_case: 
                         line=dict(color=C["net"], width=2, dash="dot"), hovertemplate="%{y:.0f} kW<extra>transformer import</extra>")
         _hline(fig, trafo, f"transformer {trafo:.0f} kVA")
         _hline(fig, -trafo, "")
-        fig.update_layout(xaxis_title="hour of day", yaxis_title="3-phase kW (consumption positive)", hovermode="x unified",
+        xlab = "hour of day" if T == len(det["demand_kw"]) and t[-1] < 24 else "hour (consecutive days)"
+        fig.update_layout(xaxis_title=xlab, yaxis_title="3-phase kW (consumption positive)", hovermode="x unified",
                           title=dict(text="Aggregate injections", font_size=14))
         parts.append("<h2>Injections</h2>" + _fig(fig, height=380))
 
@@ -399,7 +402,7 @@ def network_page(nid: str, det: dict, rows: pd.DataFrame, run: dict, main_case: 
         _hline(fig, lim["v_min_pu"], "limit", row=1, col=1)
         _hline(fig, lim["line_loading_max"], "limit", row=1, col=2)
         _hline(fig, lim["trafo_loading_max"], "limit", row=1, col=3)
-        fig.update_xaxes(title_text="hour of day")
+        fig.update_xaxes(title_text=xlab)
         fig.update_layout(hovermode="x unified")
         parts.append("<h2>Operating envelope per case</h2>" + _fig(fig, height=340))
     else:
@@ -453,14 +456,16 @@ def build_dashboard(run_dir: Path, networks: str = "flagged", max_pages: int = 3
         flagged = summary.groupby("network_id")["status"].apply(lambda x: (x != "ok").any())
         ids = [i for i in flagged[flagged].index if i in have]
     else:
-        ids = [i if i.startswith("LV") else f"LV_Grid_{i}" for i in networks.split(",") if i.strip()]
+        ids = parse_ids(networks)
         missing = [i for i in ids if i not in have]
         if missing:
             raise KeyError(f"no details for {', '.join(missing)} (run without --no-details)")
     if len(ids) > max_pages:
         print(f"{len(ids)} network pages requested, keeping the {max_pages} worst (raise --max-pages for more)")
         worst = summary[summary["case"] == main_case].set_index("network_id").reindex(ids)
-        ids = list(worst.sort_values(["status", "v_min"], ascending=[False, True]).index[:max_pages])
+        worst["rank"] = worst["status"].map(WORST_FIRST.index)
+        worst["v"] = worst["v_min"] if "v_min" in worst else 1.0
+        ids = list(worst.sort_values(["rank", "v"], na_position="last").index[:max_pages])
     pages = {i: f"net_{i}.html" for i in ids}
 
     subs_file = DATA_DIR / "geo" / "substations.csv"

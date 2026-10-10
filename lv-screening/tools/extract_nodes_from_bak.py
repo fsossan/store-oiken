@@ -96,16 +96,18 @@ def parse_page(page: bytes):
         has_var = bool(status & 0x20)
         code = name = ""
         if has_var:
-            nvar = struct.unpack_from("<H", page, p)[0]
-            if p + 2 + 2 * nvar > PAGE or nvar <= VAR_NAME:
+            nvar = struct.unpack_from("<H", page, p)[0]       # trailing NULL columns are simply absent
+            if p + 2 + 2 * nvar > PAGE:
                 continue
             ends = [struct.unpack_from("<H", page, p + 2 + 2 * j)[0] & 0x7FFF for j in range(nvar)]
             vstart = p + 2 + 2 * nvar
             bounds = [vstart] + [s + e for e in ends]
             if any(b > PAGE for b in bounds) or any(bounds[j] > bounds[j + 1] for j in range(len(ends))):
                 continue
-            code = page[bounds[VAR_CODE]:bounds[VAR_CODE + 1]].decode("utf-16-le", "replace")
-            name = page[bounds[VAR_NAME]:bounds[VAR_NAME + 1]].decode("utf-16-le", "replace")
+            if nvar > VAR_CODE:
+                code = page[bounds[VAR_CODE]:bounds[VAR_CODE + 1]].decode("utf-16-le", "replace")
+            if nvar > VAR_NAME:
+                name = page[bounds[VAR_NAME]:bounds[VAR_NAME + 1]].decode("utf-16-le", "replace")
         nid = struct.unpack_from("<i", page, s + OFF_ID)[0]
         ncl = struct.unpack_from("<i", page, s + OFF_CLASS)[0]
         x = struct.unpack_from("<d", page, s + OFF_X)[0]

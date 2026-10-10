@@ -116,7 +116,10 @@ def sample_demand(model: dict, n_nodes: int, n_days: int, rng: np.random.Generat
         n = len(idx) * n_days
         comp = rng.choice(len(w), size=n, p=w / w.sum())
         z = rng.standard_normal((n, S))
-        res = mu[comp] + np.einsum("nij,nj->ni", L[comp], z)
+        res = np.empty((n, S))
+        for g in range(len(w)):                      # x = mu_g + L_g z, per mixture component
+            sel = comp == g
+            res[sel] = mu[g] + z[sel] @ L[g].T
         if model["clip_residuals"]:
             res = np.clip(res, model["cluster_lb"][c - 1], model["cluster_ub"][c - 1])
         base = model["cluster_means"][c - 1]
@@ -129,6 +132,10 @@ def sample_demand(model: dict, n_nodes: int, n_days: int, rng: np.random.Generat
 def load_pv_year(path: Path) -> pd.DataFrame:
     """The yearly PV profile CSV (a '#' JSON header line is skipped)."""
     df = pd.read_csv(path, comment="#")
+    offsets = df["time"].str[-5:].unique()
+    if len(offsets) != 1:
+        raise ValueError(f"{path}: timestamps must share one fixed UTC offset (found {list(offsets)}); "
+                         "days are cut by position, daylight-saving shifts would misalign them")
     df["time"] = pd.to_datetime(df["time"], utc=True).dt.tz_convert("Etc/GMT-1")
     return df
 

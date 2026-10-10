@@ -91,9 +91,7 @@ def build_injections(net: Network, src: ProfileSource, n_days: int = 1) -> Injec
         ev_day = ev_node_profiles(ev_count[has_e], ecfg, src.step_min, rng)     # [n x S]
         ev[:, has_e] = np.tile(ev_day.T, (n_days, 1))
 
-    meta = {"pv_date": src.pv_date, "demand_clusters": clusters, "n_days": n_days,
-            "nominal_demand_kw": float(nominal.real.sum()), "pv_kwp": float(pv_kwp.sum()),
-            "ev_count": int(ev_count.sum())}
+    meta = {"pv_date": src.pv_date, "demand_clusters": clusters, "n_days": n_days}
     return Injections(time_h, demand, pv, ev, meta)
 
 

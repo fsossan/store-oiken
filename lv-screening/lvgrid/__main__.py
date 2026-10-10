@@ -73,24 +73,22 @@ def cmd_geo(a):
 
 
 def main(argv=None) -> int:
-    argv = sys.argv[1:] if argv is None else list(argv)
-    if argv and argv[0] == "clearsky":          # its own option parser
-        from .clearsky import main as clearsky_main
-        return clearsky_main(argv[1:])
     ap = argparse.ArgumentParser(prog="python -m lvgrid", description="Stage-1 screening of the OIKEN LV portfolio")
-    ap.add_argument("--config", help="settings file (default: lv-screening/config.json)")
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument("--config", help="settings file (default: lv-screening/config.json)")
     sub = ap.add_subparsers(dest="cmd", required=True)
+    sp = lambda name, **kw: sub.add_parser(name, parents=[common], **kw)   # noqa: E731
 
-    p = sub.add_parser("fit-demand", help="fit and cache the household demand model (needs the training .mat)")
+    p = sp("fit-demand", help="fit and cache the household demand model (needs the training .mat)")
     p.set_defaults(func=cmd_fit_demand)
 
-    p = sub.add_parser("oneshot", help="data sanity check: one load flow per network at the planning snapshot")
+    p = sp("oneshot", help="data sanity check: one load flow per network at the planning snapshot")
     p.add_argument("--networks", default="all", help="all | id,id,... | @<run folder of a previous run> (its ok networks)")
     p.add_argument("--out", help="results folder (default results/<timestamp>_oneshot)")
     p.add_argument("--no-details", action="store_true", help="skip the per-network .npz files (no dashboard pages)")
     p.set_defaults(func=cmd_oneshot)
 
-    p = sub.add_parser("screen", help="scenario screening: daily load flow with SFOE PV/EV injections")
+    p = sp("screen", help="scenario screening: daily load flow with SFOE PV/EV injections")
     p.add_argument("--scenario", required=True, help="sc1_2030, sc1_2040, ... (config.json)")
     p.add_argument("--networks", default="all", help="all | id,id,... | @<oneshot run folder> (its ok networks)")
     p.add_argument("--cases", help="comma list among demand,demand+pv,demand+pv+ev (default all three)")
@@ -99,18 +97,24 @@ def main(argv=None) -> int:
     p.add_argument("--no-details", action="store_true")
     p.set_defaults(func=cmd_screen)
 
-    p = sub.add_parser("dashboard", help="HTML dashboard for a results folder")
+    p = sp("dashboard", help="HTML dashboard for a results folder")
     p.add_argument("run_dir", help="results folder (or its name under results/)")
     p.add_argument("--networks", default="flagged", help="per-network pages: flagged (default) | all | none | id,id,...")
     p.add_argument("--max-pages", type=int, default=300)
     p.set_defaults(func=cmd_dashboard)
 
-    p = sub.add_parser("geo", help="match nodes to coordinates (needs data/geo/nodes_db.csv)")
+    p = sp("geo", help="match nodes to coordinates (needs data/geo/nodes_db.csv)")
     p.set_defaults(func=cmd_geo)
 
-    sub.add_parser("clearsky", help="clear-sky PV profile for a location (pvlib); `clearsky -h` for options")
+    sub.add_parser("clearsky", help="clear-sky PV profile for a location (pvlib); `clearsky -h` for options",
+                   add_help=False)
 
-    a = ap.parse_args(argv)
+    a, rest = ap.parse_known_args(argv)
+    if a.cmd == "clearsky":                       # has its own option parser
+        from .clearsky import main as clearsky_main
+        return clearsky_main(rest)
+    if rest:
+        ap.error(f"unrecognized arguments: {' '.join(rest)}")
     return a.func(a) or 0
 
 

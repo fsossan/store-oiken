@@ -31,11 +31,11 @@ class LoadflowResult:
     n_iter: int
 
     @property
-    def vmag(self) -> np.ndarray:
+    def v_mag(self) -> np.ndarray:
         return np.abs(self.V)
 
     @property
-    def imag(self) -> np.ndarray:
+    def i_mag(self) -> np.ndarray:
         return np.abs(self.I)
 
 
@@ -69,7 +69,7 @@ def solve(net: Network, s_inj_pu: np.ndarray, cfg: dict) -> LoadflowResult:
         active = ~converged
         just = active & ~bad & ((err < lf["tol_pu"]) | (err / np.maximum(1, np.abs(V1).max(axis=0)) < lf["tol_pu"]))
         converged |= just
-        V = np.where(np.isfinite(V1), V1, w[:, None])
+        V = V1
         if bad.any():
             V[:, bad] = np.nan
         if (converged | bad).all():

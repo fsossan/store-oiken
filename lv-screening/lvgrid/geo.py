@@ -16,7 +16,7 @@ import numpy as np
 import pandas as pd
 
 from .config import DATA_DIR
-from .data import Portfolio
+from .data import Portfolio, network_number
 
 INTERNAL_PREFIXES = ("N_Fus_", "N_JbL_", "N_JbM_", "N_TrL_", "N_TrM_", "N_SWM_", "N_MPt_")
 GEO_DIR = DATA_DIR / "geo"
@@ -41,10 +41,6 @@ def node_id_of(name: str) -> int | None:
     if name.startswith("N_") and name[2:].isdigit():
         return int(name[2:])
     return None
-
-
-def network_number(network_id: str) -> int:
-    return int("".join(ch for ch in network_id if ch.isdigit()))
 
 
 def match_nodes(portfolio: Portfolio, nodes_db: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -120,10 +116,11 @@ def load_geo(geo_dir: Path | None = None) -> tuple[pd.DataFrame, pd.DataFrame] |
     return nodes, subs
 
 
-def network_coordinates(net, geo_nodes: pd.DataFrame) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """(lat, lon, located) per internal node; unlocated nodes are placed at the
-    nearest located neighbour so that the whole network can be drawn."""
-    g = geo_nodes[geo_nodes["network_id"] == net.id].set_index("node")
+def network_coordinates(net, geo_rows: pd.DataFrame) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """(lat, lon, located) per internal node from this network's rows of
+    node_coordinates.csv; unlocated nodes are placed at the nearest located
+    neighbour so that the whole network can be drawn."""
+    g = geo_rows.set_index("node")
     lat = g["lat"].reindex(net.node_names).to_numpy(float)
     lon = g["lon"].reindex(net.node_names).to_numpy(float)
     located = np.isfinite(lat) & np.isfinite(lon)

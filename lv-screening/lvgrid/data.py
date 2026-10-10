@@ -60,19 +60,31 @@ def load_portfolio(data_dir: Path | str | None = None) -> Portfolio:
     return Portfolio(lines, subs)
 
 
+def network_number(network_id: str) -> int:
+    """LV_Grid_101 -> 101 (the DSO's node id of the substation)."""
+    return int("".join(ch for ch in network_id if ch.isdigit()))
+
+
+def parse_ids(spec: str | list[str]) -> list[str]:
+    """Comma-separated ids or bare numbers -> ['LV_Grid_<n>', ...]."""
+    items = spec.split(",") if isinstance(spec, str) else list(spec)
+    ids = []
+    for s in items:
+        s = s.strip()
+        if not s:
+            continue
+        ids.append(f"LV_Grid_{s}" if s.isdigit() else s)
+    return ids
+
+
 def select_networks(portfolio: Portfolio, selection: str | list[str] | None) -> list[str]:
     """'all' / None -> every network; a comma-separated string or list -> those ids
     (bare numbers are accepted and prefixed with LV_Grid_)."""
     if selection is None or (isinstance(selection, str) and selection.lower() == "all"):
         return portfolio.ids
-    if isinstance(selection, str):
-        selection = [s for s in selection.split(",") if s.strip()]
-    ids = []
-    for s in selection:
-        s = s.strip()
-        if s.isdigit():
-            s = f"LV_Grid_{s}"
-        ids.append(s)
+    ids = parse_ids(selection)
+    if not ids:
+        raise ValueError("no networks selected")
     known = set(portfolio.ids)
     unknown = [s for s in ids if s not in known]
     if unknown:

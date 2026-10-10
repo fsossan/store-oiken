@@ -28,7 +28,7 @@ import pandas as pd
 from . import __version__
 from .allocation import allocate_pv_ev, apply_allocation
 from .config import RESULTS_DIR, base_current_A, kw_per_pu
-from .data import Portfolio
+from .data import Portfolio, network_number
 from .geo import load_geo, network_coordinates
 from .injections import CASES, ProfileSource, build_injections, case_injection_pu
 from .loadflow import LoadflowResult, solve
@@ -44,22 +44,23 @@ def evaluate(net: Network, lf: LoadflowResult, cfg: dict) -> tuple[dict, dict]:
     kW = kw_per_pu(cfg)
     T = len(lf.converged)
     conv = lf.converged
-    vmag = lf.vmag.copy()
+    vmag = lf.v_mag.copy()
     vmag[~conv] = np.nan
     amp = np.where(net.ampacity_a > 0, net.ampacity_a, np.nan)
-    loading = (lf.imag * base_current_A(cfg)) / amp[None, :]
+    loading = (lf.i_mag * base_current_A(cfg)) / amp[None, :]
     loading[~conv] = np.nan
     slack_kw = lf.S_slack.real * kW
     slack_kw[~conv] = np.nan
 
     m: dict = {"n_steps": T, "converged_steps": int(conv.sum()), "n_iter": lf.n_iter}
     if conv.any():
-        vv = np.where(np.isnan(vmag), np.inf, vmag)
+        vl = vmag[:, 1:]                                                # load nodes only (slack is fixed at 1 pu)
+        vv = np.where(np.isnan(vl), np.inf, vl)
         k = np.unravel_index(np.argmin(vv), vv.shape)
-        m.update(v_min=float(vmag[k]), v_min_node=net.node_names[k[1]], v_min_step=int(k[0]))
-        vv = np.where(np.isnan(vmag), -np.inf, vmag)
+        m.update(v_min=float(vl[k]), v_min_node=net.node_names[k[1] + 1], v_min_step=int(k[0]))
+        vv = np.where(np.isnan(vl), -np.inf, vl)
         k = np.unravel_index(np.argmax(vv), vv.shape)
-        m.update(v_max=float(vmag[k]), v_max_node=net.node_names[k[1]], v_max_step=int(k[0]))
+        m.update(v_max=float(vl[k]), v_max_node=net.node_names[k[1] + 1], v_max_step=int(k[0]))
         under = vmag < lim["v_min_pu"]
         over = vmag > lim["v_max_pu"]
         m.update(n_undervolt_nodes=int(under.any(axis=0).sum()), undervolt_steps=int(under.any(axis=1).sum()),
@@ -79,7 +80,7 @@ def evaluate(net: Network, lf: LoadflowResult, cfg: dict) -> tuple[dict, dict]:
                  trafo_overload_steps=int((tl > lim["trafo_loading_max"]).any(axis=1).sum()))
         m.update(slack_peak_import_kw=float(np.nanmax(np.r_[slack_kw, 0.0])),
                  slack_peak_export_kw=float(np.nanmax(np.r_[-slack_kw, 0.0])))
-        loss_kw = (lf.imag ** 2 @ net.r_pu) * kW                       # I^2 R over all branches, per step
+        loss_kw = (lf.i_mag ** 2 @ net.r_pu) * kW                       # I^2 R over all branches, per step
         m["losses_kw_mean"] = float(loss_kw[conv].mean())
         kinds = []
         if m["n_undervolt_nodes"]:
@@ -120,8 +121,7 @@ def static_info(net: Network, cfg: dict) -> dict:
 
 
 def error_row(network_id: str, status: str, message: str, case: str) -> dict:
-    return {"network_id": network_id, "net_num": int("".join(c for c in network_id if c.isdigit())),
-            "case": case, "status": status, "error": message}
+    return {"network_id": network_id, "net_num": network_number(network_id), "case": case, "status": status, "error": message}
 
 
 # --------------------------------------------------------------------- run --
@@ -130,6 +130,8 @@ def run(portfolio: Portfolio, cfg: dict, ids: list[str], mode: str, scenario: st
         save_details: bool = True, verbose: bool = True) -> tuple[pd.DataFrame, Path]:
     """mode 'oneshot' (data sanity check) or 'scenario' (SFOE screening)."""
     t0 = time.time()
+    if not ids:
+        raise ValueError("no networks selected")
     if mode == "oneshot":
         cases = ["oneshot"]
         label = "oneshot"
@@ -139,6 +141,9 @@ def run(portfolio: Portfolio, cfg: dict, ids: list[str], mode: str, scenario: st
         if scenario not in cfg["scenarios"]:
             raise KeyError(f"unknown scenario {scenario}; known: {', '.join(cfg['scenarios'])}")
         cases = cases or list(CASES)
+        unknown = [c for c in cases if c not in CASES]
+        if unknown:
+            raise KeyError(f"unknown case(s) {', '.join(unknown)}; known: {', '.join(CASES)}")
         label = scenario
         alloc = allocate_pv_ev(portfolio, scenario, cfg)
         src = ProfileSource(cfg)
@@ -150,8 +155,8 @@ def run(portfolio: Portfolio, cfg: dict, ids: list[str], mode: str, scenario: st
     if save_details:
         details_dir.mkdir(exist_ok=True)
     geo = load_geo()
-    geo_nodes, geo_subs = geo if geo else (None, None)
-    sub_pos = geo_subs.set_index("network_id")[["lat", "lon"]] if geo_subs is not None else None
+    geo_groups = {k: g for k, g in geo[0].groupby("network_id", sort=False)} if geo else {}
+    sub_pos = geo[1].set_index("network_id")[["lat", "lon"]] if geo else None
 
     rows: list[dict] = []
     tty = sys.stdout.isatty()
@@ -180,8 +185,8 @@ def run(portfolio: Portfolio, cfg: dict, ids: list[str], mode: str, scenario: st
                   "edge_id": np.array(net.edge_id), "edge_type": net.edge_type, "ampacity_a": net.ampacity_a,
                   "plmax_kw": net.plmax_kw, "pg_kw": net.pg_kw, "pv_kwp": net.pv_kwp, "ev_count": net.ev_count,
                   "trafo_kva": net.trafo_kva, "trafo_edges": net.trafo_edges, "cases": np.array(cases)}
-        if geo_nodes is not None:
-            lat, lon, located = network_coordinates(net, geo_nodes)
+        if nid in geo_groups:
+            lat, lon, located = network_coordinates(net, geo_groups[nid])
             detail.update(lat=lat, lon=lon, located=located)
 
         if mode == "oneshot":
@@ -224,8 +229,12 @@ def run(portfolio: Portfolio, cfg: dict, ids: list[str], mode: str, scenario: st
                 "selection": ids if len(ids) < 50 else f"{len(ids)} networks", "seconds": round(time.time() - t0, 1),
                 "config": cfg}
     if alloc is not None:
+        applied = summary.drop_duplicates("network_id")
         run_info["allocation"] = {"pv_region_kwp": alloc.pv_region_kwp, "ev_region": alloc.ev_region,
-                                  "population_ratio": alloc.pop_ratio, "pv_date": src.pv_date}
+                                  "population_ratio": alloc.pop_ratio, "pv_date": src.pv_date,
+                                  "pv_applied_kwp": float(applied["pv_kwp"].fillna(0).sum()),
+                                  "ev_applied": int(applied["ev_count"].fillna(0).sum()),
+                                  "_note": "applied = on nodes of networks that could be built; nodes behind open switches receive nothing"}
     with open(out_dir / "run.json", "w") as f:
         json.dump(run_info, f, indent=2, default=str)
     if verbose:

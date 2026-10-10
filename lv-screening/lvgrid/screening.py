@@ -114,8 +114,7 @@ def static_info(net: Network, cfg: dict) -> dict:
         "nominal_demand_kw": float(cfg["demand_factor"] * net.plmax_kw.sum()),
         "n_demand_nodes": int((net.plmax_kw > 0).sum()),
         "existing_pv_kw": float(net.pg_kw.sum()),
-        "pv_kwp": float(net.pv_kwp.sum()) if net.pv_kwp is not None else 0.0,
-        "ev_count": int(net.ev_count.sum()) if net.ev_count is not None else 0,
+        "pv_kwp": float(net.pv_kwp.sum()), "ev_count": int(net.ev_count.sum()),
         "slack_node": net.node_names[0], "issues": "; ".join(net.issues),
     }
 

@@ -56,8 +56,8 @@ class Network:
     trafo_edges: np.ndarray              # [n_trafo] edge indices
     Y: np.ndarray                        # [N x N] complex nodal admittance, pu
     issues: list[str] = field(default_factory=list)
-    pv_kwp: np.ndarray | None = None     # [N] scenario PV (allocation), 3-phase kWp
-    ev_count: np.ndarray | None = None   # [N] scenario EV count
+    pv_kwp: np.ndarray = None            # [N] scenario PV (allocation), 3-phase kWp; zeros until apply_allocation
+    ev_count: np.ndarray = None          # [N] scenario EV count
 
     # ---- derived -------------------------------------------------------
     @property

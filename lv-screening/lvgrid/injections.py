@@ -78,13 +78,13 @@ def build_injections(net: Network, src: ProfileSource, n_days: int = 1) -> Injec
 
     # PV
     pv = np.zeros((T, N))
-    pv_kwp = net.pv_kwp if net.pv_kwp is not None else np.zeros(N)
+    pv_kwp = net.pv_kwp
     if pv_kwp.sum() > 0:
         pv = np.tile(src.pv_day, n_days)[:, None] * pv_kwp[None, :]
 
     # EV (one day, repeated)
     ev = np.zeros((T, N))
-    ev_count = net.ev_count if net.ev_count is not None else np.zeros(N, int)
+    ev_count = net.ev_count
     has_e = np.flatnonzero(ev_count > 0)
     if len(has_e):
         rng = np.random.default_rng(net.num + ecfg["seed_offset"])

@@ -375,8 +375,8 @@ def network_page(nid: str, det: dict, rows: pd.DataFrame, run: dict, main_case: 
         fig.add_scatter(x=t, y=det["demand_kw"], name="demand", line=dict(color=C["demand"], width=2), hovertemplate="%{y:.0f} kW<extra>demand</extra>")
         fig.add_scatter(x=t, y=det["pv_kw"], name="PV", line=dict(color=C["pv"], width=2), hovertemplate="%{y:.0f} kW<extra>PV</extra>")
         fig.add_scatter(x=t, y=det["ev_kw"], name="EV", line=dict(color=C["ev"], width=2), hovertemplate="%{y:.0f} kW<extra>EV</extra>")
-        fig.add_scatter(x=t, y=det["demand_kw"] + det["ev_kw"] - det["pv_kw"], name="net transformer import",
-                        line=dict(color=C["net"], width=2, dash="dot"), hovertemplate="%{y:.0f} kW<extra>net import</extra>")
+        fig.add_scatter(x=t, y=det[f"{main_case}:slack_kw"], name=f"transformer import ({main_case}, load flow)",
+                        line=dict(color=C["net"], width=2, dash="dot"), hovertemplate="%{y:.0f} kW<extra>transformer import</extra>")
         _hline(fig, trafo, f"transformer {trafo:.0f} kVA")
         _hline(fig, -trafo, "")
         fig.update_layout(xaxis_title="hour of day", yaxis_title="3-phase kW (consumption positive)", hovermode="x unified",

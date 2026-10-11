@@ -66,6 +66,20 @@ def cmd_dashboard(a):
     print(f"-> {out}")
 
 
+def cmd_mv_map(a):
+    from .data import load_portfolio
+    from .mv import write_mv_map
+    write_mv_map(load_portfolio())
+
+
+def cmd_aggregate(a):
+    from .mv import aggregate_run
+    run_dir = Path(a.run_dir)
+    if not run_dir.exists() and (RESULTS_DIR / a.run_dir).exists():
+        run_dir = RESULTS_DIR / a.run_dir
+    print(f"-> {aggregate_run(run_dir)}")
+
+
 def cmd_geo(a):
     from .data import load_portfolio
     from .geo import write_geo
@@ -105,6 +119,13 @@ def main(argv=None) -> int:
 
     p = sp("geo", help="match nodes to coordinates (needs data/geo/nodes_db.csv)")
     p.set_defaults(func=cmd_geo)
+
+    p = sp("mv-map", help="which HV/MV substation feeds each LV network (closed-switch trace of the MV grid)")
+    p.set_defaults(func=cmd_mv_map)
+
+    p = sp("aggregate", help="sum a run's injections and transformer imports per HV/MV substation")
+    p.add_argument("run_dir", help="results folder (or its name under results/)")
+    p.set_defaults(func=cmd_aggregate)
 
     sub.add_parser("clearsky", help="clear-sky PV profile for a location (pvlib); `clearsky -h` for options",
                    add_help=False)

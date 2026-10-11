@@ -12,6 +12,7 @@ injections  per-node power time series for a scenario
 screening   one-shot sanity check and temporal screening over the portfolio
 dashboard   HTML dashboard (plotly) from a results folder
 geo         node <-> coordinates
+mv          HV/MV substation feeding each network; aggregation per substation
 clearsky    clear-sky PV profile generator (pvlib)
 """
 __version__ = "0.1.0"

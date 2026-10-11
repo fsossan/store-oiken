@@ -31,6 +31,8 @@ python3 -m lvgrid screen --scenario sc1_2030 --networks 101,230 --days 7
 python3 -m lvgrid dashboard results/<run>              # -> results/<run>/dashboard/index.html (+ one page per flagged network)
 python3 -m lvgrid dashboard results/<run> --networks all --max-pages 2000
 python3 -m lvgrid geo                                  # rebuild data/geo/node_coordinates.csv from nodes_db.csv
+python3 -m lvgrid mv-map                               # which HV/MV substation feeds each LV network -> data/mv/lv_to_hvmv.csv
+python3 -m lvgrid aggregate results/<run>              # a run's injections summed per HV/MV substation (subtransmission view)
 python3 -m lvgrid clearsky --tilt 30 --azimuth 180 --year 2025 --day 2025-06-21   # clear-sky PV profile (pvlib)
 python3 -m lvgrid <command> -h                         # options
 ```
@@ -104,6 +106,35 @@ per-case envelopes of voltage, line and transformer loading over the day, and
 installed capacity vs transformer rating. Map tiles need internet access;
 everything else is local.
 
+## Subtransmission view (HV/MV substations)
+
+The export also holds the MV level: the MV lines (one sheet per HV/MV
+substation area), 245 MV switching stations and the 11 HV/MV substations
+(65/16 kV transformers of 12–20 MVA with their switchgear), exported once by
+`tools/export_mv_tables.py` to `data/mv/`. `python -m lvgrid mv-map` builds
+the graph of all MV lines plus every closed switch (MV stations, HV/MV
+substations, MV side of the LV substations) and finds, for each LV network,
+the HV/MV transformer its own transformer is connected to: 1098 of the 1116
+networks reach exactly one HV/MV substation (none reaches two, so the MV grid
+is operated radially), 18 have gaps in the MV data and stay unmapped. Sheet
+membership alone would not do: a third of the LV substations have switches
+into two MV areas (normally open ties), and for 30 % of the networks the sheet
+id is not the feeding substation. Results: `data/mv/lv_to_hvmv.csv` (network,
+substation, status) and `data/mv/hvmv.csv` (substation, city, transformers,
+MVA, networks fed, name and position from the DB node table).
+
+`python -m lvgrid aggregate results/<run>` then sums a run's per-network
+series per HV/MV substation and case: `aggregate_hvmv_series.csv` (demand,
+PV, EV and transformer import per step), `aggregate_hvmv.csv` (networks,
+nominal demand, PV kWp, EVs, peak import/export, daily energies, peak over the
+HV/MV rating) and `aggregate_hvmv.html` (daily curves). The import is the
+load-flow import of the LV transformers where the load flow converged (losses
+included) and the injection sum elsewhere; the column
+`missing_loadflow_steps` counts the substitutions. Not modelled: MV lines and
+their losses, MV-connected customers and generators, the HV/MV transformer
+itself. For sc1_2040 the evening EV peak reaches 0.6–2.0 times the HV/MV
+rating and the midday PV export 60 % of it.
+
 ## Node coordinates
 
 The grid export has no coordinates, but the node names are the DSO database's
@@ -133,6 +164,8 @@ LV03/LV95 values in the DB are normalised to LV95.
 | `data/demand_gmm.npz` | fitted from `../tech-selection/data/external/load_consumption_train_heapo.mat` (not in git) | `python -m lvgrid fit-demand` |
 | `data/demand_train_days.csv` | calendar of the training days, for weekday/season filters | `tools/export_demand_train_days.m` |
 | `data/geo/*.csv` | DB backup `tndb_esr_test_03102024.bak` (not in git) | `tools/extract_nodes_from_bak.py` + `python -m lvgrid geo` |
+| `data/mv/mv_lines.csv`, `mv_stations.csv`, `hvmv_substations.csv` | MV sheets of the OIKEN Excel export (`../obsolete/sanity_check/network_data/excel_data/`) | `python3 tools/export_mv_tables.py` |
+| `data/mv/lv_to_hvmv.csv`, `hvmv.csv` | derived from the above and the LV substation tables | `python -m lvgrid mv-map` |
 
 All settings are in `config.json` (per-unit base, one-shot factors, limits,
 load-flow tolerances, demand/PV/EV profile parameters, SFOE scenario table).
@@ -162,8 +195,8 @@ load-flow tolerances, demand/PV/EV profile parameters, SFOE scenario table).
 ```
 config.json          all settings
 lvgrid/              the package: config, data, network, loadflow, allocation,
-                     profiles, injections, screening, dashboard, geo, clearsky, __main__
-tools/               one-off exports: export_lv_grids.m, export_pv_profiles.py,
+                     profiles, injections, screening, dashboard, geo, mv, clearsky, __main__
+tools/               one-off exports: export_lv_grids.m, export_pv_profiles.py, export_mv_tables.py,
                      export_demand_train_days.m, extract_nodes_from_bak.py
 data/                inputs in Python-readable form (tracked)
 results/             runs (ignored by git)

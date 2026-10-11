@@ -51,7 +51,7 @@ h1 { font-size: 22px; margin: 8px 0 4px; } h2 { font-size: 16px; margin: 28px 0 
 table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
 th, td { padding: 5px 8px; border-bottom: 1px solid #e1e0d9; text-align: right; white-space: nowrap; }
 th:first-child, td:first-child { text-align: left; } th { position: sticky; top: 0; background: #fcfcfb; cursor: pointer; color: #52514e; font-weight: 600; }
-.facts td:first-child { color: #52514e; } .facts th { text-align: left; }
+.facts { max-width: 760px; } .facts td { white-space: normal; } .facts td:first-child { color: #52514e; width: 40%; }
 .badge { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 12px; color: #fff; }
 a { color: #1c5cab; text-decoration: none; } a:hover { text-decoration: underline; }
 .row { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; } @media (max-width: 900px) { .row { grid-template-columns: 1fr; } }
@@ -114,7 +114,9 @@ def _hline(fig, y, text, row=None, col=None):
 
 
 def _load_run(run_dir: Path):
-    summary = pd.read_csv(run_dir / "summary.csv", dtype={"network_id": str, "case": str, "status": str})
+    text_cols = ["network_id", "case", "status", "line_max_id", "v_min_node", "v_max_node", "slack_node",
+                 "issues", "error", "violation_types", "pv_date"]
+    summary = pd.read_csv(run_dir / "summary.csv", dtype={c: str for c in text_cols})
     with open(run_dir / "run.json") as f:
         run = json.load(f)
     return summary, run
@@ -201,16 +203,17 @@ def portfolio_page(summary: pd.DataFrame, run: dict, main_case: str, pages: dict
                         customdata=np.stack([g.index, g["trafo_kva"], g["ev_count"] if "ev_count" in g else np.zeros(len(g))], axis=1),
                         hovertemplate="%{customdata[0]}<br>nominal demand %{x:.0f} kW<br>PV %{y:.0f} kWp<br>transformer %{customdata[1]:.0f} kVA<br>EVs %{customdata[2]}<extra></extra>")
     ylab = "existing PV [kW]" if oneshot else "scenario PV [kWp]"
+    note = ""
     pv_pos = s[pv_col].dropna()
     pv_pos = pv_pos[pv_pos > 0]
-    if len(pv_pos) and pv_pos.max() / max(pv_pos.min(), 1e-9) > 1e3:
+    if oneshot and len(pv_pos):                       # existing PV spans 1 kW .. 100 MW
         floor = float(pv_pos.min()) / 2
         for tr in fig.data:
             tr.y = np.where(np.asarray(tr.y, float) > 0, np.asarray(tr.y, float), floor)
         fig.update_yaxes(type="log")
-        ylab += " (log scale; networks without PV at the bottom)"
+        note = "; log scale, networks without PV on the bottom row"
     fig.update_layout(xaxis_title="nominal demand [kW]", yaxis_title=ylab,
-                      title=dict(text="Penetration: PV capacity vs nominal demand (marker size ~ transformer rating)", font_size=14))
+                      title=dict(text=f"PV capacity vs nominal demand (marker size ~ transformer rating{note})", font_size=14))
     parts.append("<h2>Penetration</h2>" + _fig(fig, height=420))
 
     # map
@@ -354,7 +357,7 @@ def network_page(nid: str, det: dict, rows: pd.DataFrame, run: dict, main_case: 
                   ("demand peak / energy", f"{r['demand_peak_kw']:.0f} kW / {r['demand_kwh_day']:.0f} kWh per day"),
                   ("PV peak / energy", f"{r['pv_peak_kw']:.0f} kW / {r['pv_kwh_day']:.0f} kWh per day (day {r['pv_date']})"),
                   ("transformer peak import / export", f"{r['net_peak_import_kw']:.0f} / {r['net_peak_export_kw']:.0f} kW")]
-    parts.append("<div class='row'><div class='card'><h2 style='margin-top:0'>Network</h2>" + _facts(facts) + "</div>")
+    parts.append("<div class='card'><h2 style='margin-top:0'>Network</h2>" + _facts(facts) + "</div>")
 
     # case comparison
     head = "<tr><th>case</th><th>status</th><th>converged steps</th><th>min V [pu] (node)</th><th>UV nodes</th><th>max line loading (line)</th><th>overloaded lines</th><th>trafo loading</th><th>mean losses kW</th></tr>"
@@ -366,7 +369,7 @@ def network_page(nid: str, det: dict, rows: pd.DataFrame, run: dict, main_case: 
                  f"<td>{q['line_max_loading']:.2f} ({html.escape(str(q['line_max_id']))})</td><td>{int(q['n_overloaded_lines'])}</td>"
                  f"<td>{q['trafo_max_loading']:.2f}</td><td>{q['losses_kw_mean']:.1f}</td></tr>"
                  if np.isfinite(q.get("v_min", np.nan)) else f"<tr><td>{c}</td><td>{_badge(q['status'])}</td><td colspan='7'>no converged step</td></tr>")
-    parts.append(f"<div class='card'><h2 style='margin-top:0'>Cases</h2><table>{head}{body}</table></div></div>")
+    parts.append(f"<div class='card'><h2 style='margin-top:0'>Cases</h2><table>{head}{body}</table></div>")
 
     parts.append("<h2>Topology</h2>" + _fig(_topology_figure(det, main_case, lim), height=600))
 

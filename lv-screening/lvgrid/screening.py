@@ -10,9 +10,10 @@ results folder:
                           (consumed by the dashboard)
 
 Cases of the scenario screening: 'demand', 'demand+pv', 'demand+pv+ev', so a
-violation can be attributed to its driver. The one-shot run has one case,
-'oneshot': demand_factor x fuse-rated peak at every node at the same instant
-(and generation_factor x existing PV), the DSO's planning snapshot.
+violation can be attributed to its driver; the scenario (allocation, PV day,
+profile settings) comes from a scenario folder (scenario.py). The one-shot run
+has one case, 'oneshot': demand_factor x fuse-rated peak at every node at the
+same instant (and generation_factor x existing PV), the DSO's planning snapshot.
 """
 from __future__ import annotations
 
@@ -26,13 +27,14 @@ import numpy as np
 import pandas as pd
 
 from . import __version__
-from .allocation import allocate_pv_ev, apply_allocation
-from .config import RESULTS_DIR, base_current_A, kw_per_pu
+from .config import RESULTS_DIR, base_current_A, kw_per_pu, resolve
 from .data import Portfolio, network_number
 from .geo import load_geo, network_coordinates
-from .injections import CASES, ProfileSource, build_injections, case_injection_pu
+from .injections import CASES, build_injections, case_injection_pu
 from .loadflow import LoadflowResult, solve
 from .network import EDGE_LINE, Network, NetworkError, build_network, topology_ok
+from .profiles import load_demand_model
+from .scenario import Scenario
 
 STATUSES = ["ok", "violation", "not_converged", "topology_error", "build_error"]
 
@@ -125,30 +127,29 @@ def error_row(network_id: str, status: str, message: str, case: str) -> dict:
 
 
 # --------------------------------------------------------------------- run --
-def run(portfolio: Portfolio, cfg: dict, ids: list[str], mode: str, scenario: str | None = None,
+def run(portfolio: Portfolio, cfg: dict, ids: list[str], scenario: Scenario | None = None,
         cases: list[str] | None = None, n_days: int = 1, out_dir: Path | None = None,
         save_details: bool = True, verbose: bool = True) -> tuple[pd.DataFrame, Path]:
-    """mode 'oneshot' (data sanity check) or 'scenario' (SFOE screening)."""
+    """Scenario screening when `scenario` is given, else the one-shot sanity check."""
     t0 = time.time()
     if not ids:
         raise ValueError("no networks selected")
-    if mode == "oneshot":
+    if scenario is None:
         cases = ["oneshot"]
         label = "oneshot"
-        alloc = None
-        src = None
-    elif mode == "scenario":
-        if scenario not in cfg["scenarios"]:
-            raise KeyError(f"unknown scenario {scenario}; known: {', '.join(cfg['scenarios'])}")
+        model = None
+    else:
         cases = cases or list(CASES)
         unknown = [c for c in cases if c not in CASES]
         if unknown:
             raise KeyError(f"unknown case(s) {', '.join(unknown)}; known: {', '.join(CASES)}")
-        label = scenario
-        alloc = allocate_pv_ev(portfolio, scenario, cfg)
-        src = ProfileSource(cfg)
-    else:
-        raise ValueError(mode)
+        label = scenario.name
+        path = resolve(cfg["demand"]["model_file"])
+        if not path.exists():
+            raise FileNotFoundError(f"demand model {path} missing: run `python -m lvgrid fit-demand` first")
+        model = load_demand_model(path)
+        if int(model["steps_per_day"]) != len(scenario.pv_day):
+            raise ValueError("demand model resolution differs from the scenario's PV day")
     out_dir = Path(out_dir) if out_dir else RESULTS_DIR / f"{datetime.now():%Y%m%d_%H%M%S}_{label}"
     out_dir.mkdir(parents=True, exist_ok=True)
     details_dir = out_dir / "details"
@@ -157,6 +158,8 @@ def run(portfolio: Portfolio, cfg: dict, ids: list[str], mode: str, scenario: st
     geo = load_geo()
     geo_groups = {k: g for k, g in geo[0].groupby("network_id", sort=False)} if geo else {}
     sub_pos = geo[1].set_index("network_id")[["lat", "lon"]] if geo else None
+    step_min = scenario.step_min if scenario else cfg["time"]["step_min"]
+    dt_h = step_min / 60.0
 
     rows: list[dict] = []
     tty = sys.stdout.isatty()
@@ -172,7 +175,8 @@ def run(portfolio: Portfolio, cfg: dict, ids: list[str], mode: str, scenario: st
         except Exception as e:  # unexpected data problem: record, keep going
             rows.extend(error_row(nid, "build_error", f"{type(e).__name__}: {e}", c) for c in cases)
             continue
-        apply_allocation(net, alloc)
+        if scenario is not None:
+            scenario.apply(net)
         info = static_info(net, cfg)
         if sub_pos is not None and nid in sub_pos.index:
             info["lat"], info["lon"] = float(sub_pos.at[nid, "lat"]), float(sub_pos.at[nid, "lon"])
@@ -189,7 +193,7 @@ def run(portfolio: Portfolio, cfg: dict, ids: list[str], mode: str, scenario: st
             lat, lon, located = network_coordinates(net, geo_groups[nid])
             detail.update(lat=lat, lon=lon, located=located)
 
-        if mode == "oneshot":
+        if scenario is None:
             gf = cfg["oneshot"]["generation_factor"]
             s_kw = -cfg["demand_factor"] * (net.plmax_kw + 1j * net.qlmax_kvar) + gf * net.pg_kw
             lf = solve(net, (s_kw[1:] / kw_per_pu(cfg))[None, :], cfg)
@@ -197,12 +201,11 @@ def run(portfolio: Portfolio, cfg: dict, ids: list[str], mode: str, scenario: st
             rows.append({**info, "case": "oneshot", **m, "pv_kw": float(gf * net.pg_kw.sum())})
             detail.update({f"oneshot:{k}": v for k, v in arrays.items()})
         else:
-            inj = build_injections(net, src, n_days)
+            inj = build_injections(net, scenario, model, n_days)
             agg = inj.aggregate()
             detail.update(time_h=inj.time_h, demand_kw=agg["demand_kw"], pv_kw=agg["pv_kw"], ev_kw=agg["ev_kw"],
                           demand_clusters=inj.meta["demand_clusters"])
-            dt_h = cfg["time"]["step_min"] / 60.0
-            base = {**info, "pv_date": inj.meta["pv_date"], "n_days": n_days,
+            base = {**info, "pv_date": scenario.meta["pv_date"], "n_days": n_days,
                     "demand_peak_kw": float(agg["demand_kw"].max()), "demand_kwh_day": float(agg["demand_kw"].sum() * dt_h / n_days),
                     "pv_peak_kw": float(agg["pv_kw"].max()), "pv_kwh_day": float(agg["pv_kw"].sum() * dt_h / n_days),
                     "ev_peak_kw": float(agg["ev_kw"].max()), "ev_kwh_day": float(agg["ev_kw"].sum() * dt_h / n_days)}
@@ -225,16 +228,16 @@ def run(portfolio: Portfolio, cfg: dict, ids: list[str], mode: str, scenario: st
     summary = summary[front + [c for c in summary.columns if c not in front]]
     summary.to_csv(out_dir / "summary.csv", index=False, float_format="%.6g")
     run_info = {"created": datetime.now().isoformat(timespec="seconds"), "lvgrid_version": __version__,
-                "mode": mode, "scenario": scenario, "cases": cases, "n_days": n_days, "n_networks": len(ids),
+                "mode": "oneshot" if scenario is None else "scenario", "scenario": None if scenario is None else scenario.name,
+                "cases": cases, "n_days": n_days, "n_networks": len(ids),
                 "selection": ids if len(ids) < 50 else f"{len(ids)} networks", "seconds": round(time.time() - t0, 1),
                 "config": cfg}
-    if alloc is not None:
+    if scenario is not None:
         applied = summary.drop_duplicates("network_id")
-        run_info["allocation"] = {"pv_region_kwp": alloc.pv_region_kwp, "ev_region": alloc.ev_region,
-                                  "population_ratio": alloc.pop_ratio, "pv_date": src.pv_date,
-                                  "pv_applied_kwp": float(applied["pv_kwp"].fillna(0).sum()),
-                                  "ev_applied": int(applied["ev_count"].fillna(0).sum()),
-                                  "_note": "applied = on nodes of networks that could be built; nodes behind open switches receive nothing"}
+        run_info["scenario_info"] = {**scenario.provenance(), "folder": f"scenarios/{scenario.name}",
+                                     "pv_applied_kwp": float(applied["pv_kwp"].fillna(0).sum()),
+                                     "ev_applied": int(applied["ev_count"].fillna(0).sum()),
+                                     "_note": "applied = on nodes of networks that could be built; nodes behind open switches receive nothing"}
     with open(out_dir / "run.json", "w") as f:
         json.dump(run_info, f, indent=2, default=str)
     if verbose:

@@ -6,7 +6,7 @@ config      settings file + paths
 data        the exported grid portfolio (CSV)
 network     one network -> admittance matrix, nodal ratings, topology checks
 loadflow    fixed-point AC load flow, vectorised over time steps
-allocation  SFOE scenario -> PV kWp and EV counts per node
+scenario    SFOE scenario -> frozen scenario folder (PV kWp and EV counts per node, PV day, profile settings)
 profiles    demand (GMM), PV (representative day) and EV shapes
 injections  per-node power time series for a scenario
 screening   one-shot sanity check and temporal screening over the portfolio

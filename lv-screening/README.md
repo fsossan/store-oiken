@@ -25,7 +25,9 @@ node coordinates, fitted demand model); see "Data" below.
 
 ```bash
 python3 -m lvgrid oneshot                              # sanity check of every network -> results/<stamp>_oneshot/
-python3 -m lvgrid screen --scenario sc1_2040           # scenario screening, all networks, 3 cases
+python3 -m lvgrid scenario --scenario sc1_2040         # scenario folder: PV/EV per node, PV day, settings -> scenarios/sc1_2040/
+python3 -m lvgrid scenario --scenario sc1_2040 --name sc1_2040_custom   # a copy to edit (allocation.csv) and screen under its own name
+python3 -m lvgrid screen --scenario sc1_2040           # scenario screening, all networks, 3 cases (builds the folder if absent)
 python3 -m lvgrid screen --scenario sc1_2040 --networks @results/<oneshot run>   # only networks that passed the sanity check
 python3 -m lvgrid screen --scenario sc1_2030 --networks 101,230 --days 7
 python3 -m lvgrid dashboard results/<run>              # -> results/<run>/dashboard/index.html (+ one page per flagged network)
@@ -35,10 +37,20 @@ python3 -m lvgrid mv-map                               # which HV/MV substation 
 python3 -m lvgrid aggregate results/<run>              # a run's injections summed per HV/MV substation (subtransmission view)
 python3 -m lvgrid clearsky --tilt 30 --azimuth 180 --year 2025 --day 2025-06-21   # clear-sky PV profile (pvlib)
 python3 -m lvgrid <command> -h                         # options
+python3 -m pytest tests                                # smoke tests (15 s)
 ```
 
 `--out` names the results folder; without it, `results/<timestamp>_<label>/`.
 Nothing is overwritten unless you reuse `--out`.
+
+Flow: `config.json` (SFOE table, profile settings) → `scenario` writes a
+frozen folder under `scenarios/<name>/` (allocation per node, the PV day,
+the EV and demand settings, totals, a hash of the allocation) → `screen`
+reads that folder and records its name and hash in `run.json` → `dashboard`
+and `aggregate` read the run. A scenario folder is the hand-over point to the
+MATLAB MILP too (`readtable('scenarios/sc1_2040/allocation.csv')`), and an
+edited `allocation.csv` is a valid custom scenario (its hash is then marked
+"edited after creation").
 
 ## What the runs do
 
@@ -51,14 +63,21 @@ connected to the slack), not to represent a real operating point. Status per
 network: `ok`, `violation` (voltage outside 0.9–1.1 pu, line or transformer
 above its rating), `not_converged`, `topology_error`, `build_error`.
 
+**Scenario** (`scenario`). The SFOE national PV capacity and EV fleet of the
+chosen scenario are scaled to Sion+Sierre by population, split between
+networks in proportion to their fuse-rated peak and within a network in
+proportion to each node's PLmax (EVs as integers, largest remainder). The
+folder also freezes the PV day (the real day of the yearly profile closest to
+the season's mean shape), the EV charging and demand settings.
+
 **Scenario screening** (`screen`). One synthetic day (96 steps of 15 min) per
 network with three nested cases, so a violation can be attributed to its driver:
 
 | case | injections |
 |---|---|
 | `demand` | household demand only: 6 % of the fuse-rated peak per node times a synthetic household day (GMM fitted on Swiss smart-meter data, one random cluster and day per node) |
-| `demand+pv` | plus the scenario PV: national SFOE capacity scaled to Sion+Sierre by population, split over networks and nodes in proportion to fuse-rated peak, times one representative clear-sky day |
-| `demand+pv+ev` | plus the scenario EVs: same allocation (integers), each vehicle charging at 11 kW for 4 h after a truncated-normal arrival (mean 18:00, σ 0.6 h, 17:00–21:00) |
+| `demand+pv` | plus the scenario PV: node kWp from the scenario folder times its PV day |
+| `demand+pv+ev` | plus the scenario EVs: node counts from the scenario folder, each vehicle charging at 11 kW for 4 h after a truncated-normal arrival (mean 18:00, σ 0.6 h, 17:00–21:00) |
 
 Seeds derive from the network number, so a network sees the same demand and
 EV realisation in every scenario; scenarios differ only by PV kWp and EV counts.
@@ -194,8 +213,10 @@ load-flow tolerances, demand/PV/EV profile parameters, SFOE scenario table).
 
 ```
 config.json          all settings
-lvgrid/              the package: config, data, network, loadflow, allocation,
+lvgrid/              the package: config, data, network, loadflow, scenario,
                      profiles, injections, screening, dashboard, geo, mv, clearsky, __main__
+tests/               pytest smoke tests
+scenarios/           scenario folders (tracked; regenerate with `scenario --force`)
 tools/               one-off exports: export_lv_grids.m, export_pv_profiles.py, export_mv_tables.py,
                      export_demand_train_days.m, extract_nodes_from_bak.py
 data/                inputs in Python-readable form (tracked)

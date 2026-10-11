@@ -74,9 +74,9 @@ if (map && map.on) map.on('plotly_click', d => { const u = d.points[0].customdat
 
 
 # ------------------------------------------------------------------ helpers --
-def _page(title: str, body: str) -> str:
+def _page(title: str, body: str, plotly_src: str = "plotly.min.js") -> str:
     return (f"<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'>"
-            f"<title>{html.escape(title)}</title><style>{CSS}</style><script src='plotly.min.js'></script></head>"
+            f"<title>{html.escape(title)}</title><style>{CSS}</style><script src='{plotly_src}'></script></head>"
             f"<body><main>{body}</main><script>{JS}</script></body></html>")
 
 
@@ -137,9 +137,10 @@ def portfolio_page(summary: pd.DataFrame, run: dict, main_case: str, pages: dict
              + (f"Snapshot: {cfg['demand_factor']:.0%} of fuse-rated peak at every connection, "
                 f"{cfg['oneshot']['generation_factor']:.0%} of existing PV." if oneshot else
                 f"Cases: {', '.join(cases)}; metrics below for <b>{main_case}</b>. "
-                f"Scenario PV {run['allocation']['pv_region_kwp'] / 1e3:,.0f} MWp and {run['allocation']['ev_region']:,} EVs "
-                f"for Sion+Sierre ({run['allocation']['population_ratio']:.2%} of the national figures), "
-                f"PV day {run['allocation']['pv_date']} ({cfg['pv']['series']}), {run['n_days']} day(s) at {cfg['time']['step_min']} min.")
+                f"Scenario <b>{html.escape(str(run['scenario']))}</b> ({run['scenario_info'].get('sfoe', '')} {run['scenario_info'].get('year', '')}): "
+                f"PV {run['scenario_info']['pv_region_kwp'] / 1e3:,.0f} MWp and {run['scenario_info']['ev_region']:,} EVs "
+                f"for Sion+Sierre ({run['scenario_info']['population_ratio']:.2%} of the national figures), "
+                f"PV day {run['scenario_info']['pv_date']}, {run['n_days']} day(s) at {cfg['time']['step_min']} min.")
              + f" Limits: {lim['v_min_pu']}–{lim['v_max_pu']} pu, line and transformer loading ≤ {lim['line_loading_max']:.0%}.</p>"]
 
     # KPIs

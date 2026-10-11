@@ -243,4 +243,4 @@ def _aggregate_page(run_dir: Path, long_df: pd.DataFrame, sum_df: pd.DataFrame, 
             "the injection sum elsewhere. MV lines, MV losses and MV-connected customers are not modelled.</p>",
             _fig(fig, height=max(320 * rows, 500)), "<h2>Per substation and case</h2><div class='card' style='overflow:auto'>",
             sum_df.to_html(index=False, float_format=lambda x: f"{x:,.1f}", border=0), "</div>"]
-    (run_dir / "aggregate_hvmv.html").write_text(_page("Subtransmission view", "".join(body)).replace("src='plotly.min.js'", "src='dashboard/plotly.min.js'"))
+    (run_dir / "aggregate_hvmv.html").write_text(_page("Subtransmission view", "".join(body), plotly_src="dashboard/plotly.min.js"))

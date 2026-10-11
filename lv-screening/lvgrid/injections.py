@@ -2,8 +2,8 @@
 
 Three streams, all in 3-phase kW with consumption positive:
     demand  demand_factor x fuse-rated peak (P + jQ, constant power factor)
-            times a synthetic household day shape per node
-    pv      scenario kWp per node times the representative PV day
+            times a synthetic household day shape per node (demand model)
+    pv      scenario kWp per node times the scenario's PV day
     ev      scenario EV count per node, uncontrolled evening charging
 `case_injection_pu` combines them into the net injection the load flow needs.
 Seeds derive from the network number so a network gets the same demand and EV
@@ -15,9 +15,10 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from .config import kw_per_pu, resolve
+from .config import kw_per_pu
 from .network import Network
-from .profiles import ev_node_profiles, load_demand_model, load_pv_year, pv_representative_day, sample_demand
+from .profiles import ev_node_profiles, sample_demand
+from .scenario import Scenario
 
 CASES = {
     "demand": ("demand",),
@@ -39,60 +40,33 @@ class Injections:
                 "ev_kw": self.ev_kw.sum(axis=1)}
 
 
-class ProfileSource:
-    """Loads the demand model and the PV day once for a whole run."""
-
-    def __init__(self, cfg: dict):
-        self.cfg = cfg
-        self.step_min = cfg["time"]["step_min"]
-        self.S = 24 * 60 // self.step_min
-        path = resolve(cfg["demand"]["model_file"])
-        if not path.exists():
-            raise FileNotFoundError(f"demand model {path} missing: run `python -m lvgrid fit-demand` first")
-        self.model = load_demand_model(path)
-        if int(self.model["steps_per_day"]) != self.S:
-            raise ValueError("demand model resolution differs from time.step_min")
-        pcfg = cfg["pv"]
-        year = load_pv_year(resolve(pcfg["file"]))
-        self.pv_day, self.pv_date, _ = pv_representative_day(year, pcfg["series"], pcfg["season"], self.step_min)
-        self.pv_day = self.pv_day * pcfg.get("scale", 1.0)
-
-
-def build_injections(net: Network, src: ProfileSource, n_days: int = 1) -> Injections:
-    cfg = src.cfg
-    S, N = src.S, net.n_nodes
+def build_injections(net: Network, sc: Scenario, demand_model: dict, n_days: int = 1) -> Injections:
+    """net must carry the scenario's pv_kwp / ev_count (Scenario.apply)."""
+    S = len(sc.pv_day)
+    N = net.n_nodes
     T = S * n_days
-    time_h = np.arange(T) * src.step_min / 60.0
-    dcfg, ecfg = cfg["demand"], cfg["ev"]
+    time_h = np.arange(T) * sc.step_min / 60.0
 
-    # demand
-    nominal = cfg["demand_factor"] * (net.plmax_kw + 1j * net.qlmax_kvar)
+    nominal = sc.demand["demand_factor"] * (net.plmax_kw + 1j * net.qlmax_kvar)
     has_d = np.flatnonzero(nominal.real > 0)
     demand = np.zeros((T, N), complex)
     clusters = np.zeros(N, int)
     if len(has_d):
-        rng = np.random.default_rng(net.num + dcfg["seed_offset"])
-        shape, cl = sample_demand(src.model, len(has_d), n_days, rng)        # [n x D x S]
-        demand[:, has_d] = (shape.reshape(len(has_d), T).T * nominal[has_d][None, :])
+        rng = np.random.default_rng(net.num + sc.demand["seed_offset"])
+        shape, cl = sample_demand(demand_model, len(has_d), n_days, rng)        # [n x D x S]
+        demand[:, has_d] = shape.reshape(len(has_d), T).T * nominal[has_d][None, :]
         clusters[has_d] = cl
 
-    # PV
-    pv = np.zeros((T, N))
-    pv_kwp = net.pv_kwp
-    if pv_kwp.sum() > 0:
-        pv = np.tile(src.pv_day, n_days)[:, None] * pv_kwp[None, :]
+    pv = np.tile(sc.pv_day, n_days)[:, None] * net.pv_kwp[None, :] if net.pv_kwp.sum() > 0 else np.zeros((T, N))
 
-    # EV (one day, repeated)
     ev = np.zeros((T, N))
-    ev_count = net.ev_count
-    has_e = np.flatnonzero(ev_count > 0)
+    has_e = np.flatnonzero(net.ev_count > 0)
     if len(has_e):
-        rng = np.random.default_rng(net.num + ecfg["seed_offset"])
-        ev_day = ev_node_profiles(ev_count[has_e], ecfg, src.step_min, rng)     # [n x S]
+        rng = np.random.default_rng(net.num + sc.ev["seed_offset"])
+        ev_day = ev_node_profiles(net.ev_count[has_e], sc.ev, sc.step_min, rng)   # [n x S]
         ev[:, has_e] = np.tile(ev_day.T, (n_days, 1))
 
-    meta = {"pv_date": src.pv_date, "demand_clusters": clusters, "n_days": n_days}
-    return Injections(time_h, demand, pv, ev, meta)
+    return Injections(time_h, demand, pv, ev, {"demand_clusters": clusters, "n_days": n_days})
 
 
 def case_injection_pu(inj: Injections, case: str, cfg: dict) -> np.ndarray:

@@ -3,7 +3,7 @@
 Stage 1 of the OIKEN LV study in Python: the data sanity check of the 1116
 low-voltage networks of Sion and Sierre, the scenario screening (daily load
 flow with SFOE 2030/2040 PV and EV injections), and an HTML dashboard. It
-replaces the MATLAB stages 4–7 of `../sanity_check` and the stage-1 report of
+replaces the MATLAB stages 4–7 of `../obsolete/sanity_check` and the stage-1 report of
 `../tech-selection`; the storage MILP (stage 3) stays in MATLAB.
 
 No server, no database: pure numpy/pandas, one results folder per run, static
@@ -127,7 +127,7 @@ LV03/LV95 values in the DB are normalised to LV95.
 
 | file | origin | regenerate with |
 |---|---|---|
-| `data/lv_grids/lines.csv`, `substations.csv` | `../tech-selection/data/raw/lv_grids.mat` (= `../sanity_check/data_v2.mat`, the patched OIKEN export) | `matlab -batch "run('tools/export_lv_grids.m')"` |
+| `data/lv_grids/lines.csv`, `substations.csv` | `../tech-selection/data/raw/lv_grids.mat` (= `../obsolete/sanity_check/data_v2.mat`, the patched OIKEN export) | `matlab -batch "run('tools/export_lv_grids.m')"` |
 | `data/pv/pv_profiles_year.csv` | `../tech-selection/data/raw/pv_profiles_year.mat` (pvlib, 2019, Sion, 35° south; clear sky and PVGIS TMY) | `python3 tools/export_pv_profiles.py` |
 | `data/pv/clearsky_sion_sierre_2019.csv` | `python -m lvgrid clearsky` (constant 20 °C air temperature: 5 % lower annual yield than the reference, same daily shape) | same |
 | `data/demand_gmm.npz` | fitted from `../tech-selection/data/external/load_consumption_train_heapo.mat` (not in git) | `python -m lvgrid fit-demand` |
@@ -139,7 +139,7 @@ load-flow tolerances, demand/PV/EV profile parameters, SFOE scenario table).
 
 ## Checks against the MATLAB results
 
-* One-shot, all 1116 networks: same classification as `sanity_check`
+* One-shot, all 1116 networks: same classification as the MATLAB `sanity_check`
   (1036 ok, 47 violation, 24 + 2 not converged / no transformer, 7 topology
   errors); lowest voltages agree within the legacy table's rounding (median
   0.002 pu), overloaded-line counts are identical. Transformer loadings of the

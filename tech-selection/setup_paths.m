@@ -9,7 +9,8 @@ function paths = setup_paths()
 %       run('/path/to/tech-selection/setup_paths.m')     % or: cd there; setup_paths
 %
 %   Adds src/ (and experiments/, if present) recursively to the path, makes
-%   sure the archived old-code/ tree is NOT on the path, and returns the
+%   sure an archived old-code/ tree (now ../obsolete/tech-selection-old-code/)
+%   is NOT on the path, and returns the
 %   struct from project_paths (root, config, data_*, results, data files).
 %
 %   Missing data files only produce a warning here; the function that

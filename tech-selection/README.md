@@ -58,7 +58,7 @@ Simulated day count and time step live in `config/sizing_cfg.json` under
 scenario table in `config/general_config.json`.
 
 `setup_paths()` puts `src/` (and `experiments/`) on the MATLAB path, keeps
-`old-code/` off it, and returns the project folder layout. Every file the
+the archived code (now `../obsolete/tech-selection-old-code/`) off it, and returns the project folder layout. Every file the
 pipeline reads or writes is resolved through `src/util/project_paths.m`, so
 nothing depends on MATLAB's current directory.
 
@@ -80,7 +80,6 @@ experiments/            study scripts and their write-ups; their outputs go to
                         results/experiments/
 results/                everything the code writes; git-ignored, created on demand
 docs/                   development notes and the load-simulator report
-old-code/               archived, never on the path
 ```
 
 ## Results
@@ -109,7 +108,7 @@ take `(out, cfg)` with `cfg = out.cfg`, so a result can be re-analysed later
 regardless of the current config files.
 
 Outputs produced before the 2026-10-10 restructure were moved unchanged to
-`results/legacy_output/` (the former `output/` tree) and
+`../obsolete/tech-selection-legacy-output/` (the former `output/` tree) and
 `results/experiments/` (the former `experiments/results/` and
 `experiments/tech-selection-result-analysis/{results,figures}/`).
 

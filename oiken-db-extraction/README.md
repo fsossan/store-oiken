@@ -90,7 +90,7 @@ cnxn = pyodbc.connect(
 > **Do not commit your password.** Prefer reading it from the environment
 > (`os.environ["MSSQL_PASSWORD"]`) and exporting it in your shell, or use
 > `Trusted_Connection=yes` on Windows with a domain account — as
-> [Research+2025-Main.py](Research+2025-Main.py) does.
+> the original research script (`../obsolete/db-extraction-research/Research+2025-Main.py`) does.
 
 ---
 
@@ -118,8 +118,7 @@ ETA every 50 substations.
 | Path | What it is |
 |---|---|
 | [Oiken extraction.py](Oiken%20extraction.py) | **Main script.** Cleaned-up extraction with the three boundary rules |
-| [Research+2025-Main.py](Research+2025-Main.py) | Original exploratory research script (Windows / trusted connection) |
-| [Research+2025-Main.ipynb](Research+2025-Main.ipynb) | Notebook version of the above |
+| `../obsolete/db-extraction-research/` | Original exploratory research script and its notebook version (moved out on 2026-10-11) |
 | [query_network_data.sql](query_network_data.sql) | Pure-SQL equivalent of the branch table for one substation |
 | [testing_network_query.sql](testing_network_query.sql) | Scratch queries used while validating joins |
 | `*.csv` | Small sample table dumps kept for reference (`noeud_NOD`, `branche_BRA`, …) |

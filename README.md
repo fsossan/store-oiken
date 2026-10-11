@@ -8,13 +8,13 @@ screening of grid constraints and siting/sizing of battery storage.
 |---|---|---|
 | [`lv-screening/`](lv-screening/README.md) | **Stage 1, current toolchain.** Data sanity check, scenario injections (demand, PV, EV), daily load-flow screening of the whole portfolio, HTML dashboard, node coordinates, clear-sky PV utility. | Python |
 | [`tech-selection/`](tech-selection/README.md) | **Stage 3.** Siting, sizing and technology selection of battery storage per network (MILP, CVX + Gurobi). Also holds the authoritative input data: `data/raw/lv_grids.mat` (grid portfolio), `data/raw/pv_profiles_year.mat`, `data/external/` (demand training set, not in git). | MATLAB |
-| [`sanity_check/`](sanity_check/README.md) | Previous MATLAB implementation of stage 1 (one-shot and temporal load flows, MkDocs website). Kept for reference; superseded by `lv-screening/`. | MATLAB |
 | [`oiken-db-extraction/`](oiken-db-extraction/README.md) | Extraction of the LV networks from the DSO's SQL Server database. The 3.9 GB backup `tndb_esr_test_03102024 (1).bak` lives here and is not in git. | Python / SQL |
+| [`obsolete/`](obsolete/README.md) | Superseded material: the first MATLAB stage 1 (`sanity_check`, whose Excel-reading and parameter-patching stages are still the source of `lv_grids.mat`), archived MATLAB code and outputs of tech-selection, the exploratory DB script, the original `.git` folders. | – |
 
 Data flow:
 
 ```
-DSO SQL backup ──(oiken-db-extraction)──► Excel exports ──(sanity_check stages 1–3)──► lv_grids.mat
+DSO SQL backup ──(oiken-db-extraction)──► Excel exports ──(obsolete/sanity_check stages 1–3)──► lv_grids.mat
                                                                                          │
      lv-screening/tools/export_lv_grids.m (MATLAB, once) ◄───────────────────────────────┘
                  │
@@ -28,8 +28,9 @@ DSO SQL backup ──(lv-screening/tools/extract_nodes_from_bak.py)──► nod
 
 ## History
 
-The three sub-folders were separate git repositories (author DaFozi) until
-2026-10-10; their original `.git` folders are kept in `_nested_git/` (ignored
-by this repository) and can be moved back to restore them. The first commit of
-this repository is the state of the three folders at that date; everything
-after it is the Python toolchain and documentation.
+`tech-selection`, `sanity_check` and `oiken-db-extraction` were separate git
+repositories (author DaFozi) until 2026-10-10; their original `.git` folders
+are kept in `obsolete/nested-git/` (ignored by this repository) and can be
+moved back to restore them. The first commit of this repository is the state
+of the three folders at that date; everything after it is the Python
+toolchain, documentation and the move of superseded material to `obsolete/`.

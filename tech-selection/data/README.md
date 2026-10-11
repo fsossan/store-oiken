@@ -55,5 +55,5 @@ when that file is present.
 
 `LV_data/all_LV_data.mat` (an older copy of the same 1116 networks),
 `ids_for_comparison.mat`, `one_shot_lf_network_classification.mat` and
-`temporal_stats.mat` were referenced only by `old-code/` and were deleted
+`temporal_stats.mat` were referenced only by `old-code/` (now `../obsolete/tech-selection-old-code/`) and were deleted
 from the tree. They remain in git history before this change.

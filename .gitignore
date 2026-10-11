@@ -1,6 +1,8 @@
-# Backups of the three sub-projects' original .git folders (moved here on 2026-10-10
-# so that this repository can track their files; move back to restore them).
-_nested_git/
+# Backups of the three sub-projects' original .git folders (moved on 2026-10-10
+# so that this repository can track their files; move back to restore them),
+# and the pre-restructure MATLAB outputs (862 MB).
+obsolete/nested-git/
+obsolete/tech-selection-legacy-output/
 
 # OS / editor
 .DS_Store
@@ -19,4 +21,4 @@ __pycache__/
 lv-screening/results/
 
 # Duplicate of tech-selection/data/external/load_consumption_train_heapo.mat (163 MB)
-sanity_check/util/load_consumption_train_heapo.mat
+obsolete/sanity_check/util/load_consumption_train_heapo.mat

@@ -38,7 +38,7 @@ What changed today, in order:
    JSON files, `data/{raw,external,derived}` for inputs, `results/` for every
    output (git-ignored). `setup_paths.m` + `src/util/project_paths.m` replace
    `addpath(genpath(pwd))`; nothing depends on the current directory any more.
-   Old outputs moved unchanged to `results/legacy_output/` and
+   Old outputs moved unchanged to `results/legacy_output/` (since 2026-10-11: `../obsolete/tech-selection-legacy-output/`) and
    `results/experiments/`. The former `CLAUDE.md` became
    `docs/DEVELOPMENT_NOTES.md`. Four unused `LV_data` files were deleted.
    Line endings normalised to LF with a `.gitattributes`.
@@ -67,7 +67,7 @@ What changed today, in order:
 
 **Demand realisations differ from all results produced before 2026-10-10**, by
 design: one cached fit instead of a per-solve refit, and seeded draws. The old
-numbers are reproducible only from `results/legacy_output/`.
+numbers are reproducible only from `../obsolete/tech-selection-legacy-output/`.
 
 ## 2. Verified where
 
@@ -118,7 +118,7 @@ main                                                      % MILP on LV_Grid_101
 
 - Provenance of the grid data (operator, date, usage restrictions) and the
   source of `load_consumption_train_heapo.mat`: both blank in `data/README.md`.
-- Whether `old-code/` (10k lines, archived) and `docs/load_simulator_final.pdf`
+- Whether `old-code/` (10k lines, archived; now `../obsolete/tech-selection-old-code/`) and `docs/load_simulator_final.pdf`
   should be in the shared repo.
 - Modelling caveats not fixed: cyclic SOE constraint spans the whole horizon
   when `days > 1`; slack bus is not internal node 1 for `LV_Grid_92713` (results

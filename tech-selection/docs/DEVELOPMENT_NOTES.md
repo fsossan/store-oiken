@@ -24,6 +24,7 @@ decisions. For the short version see the top-level `README.md`.
 | `experiments/results/...` | `results/experiments/...` |
 | `docs/...` (study write-ups) | `experiments/docs/...` |
 | `addpath(genpath(pwd))` + `rmpath(... 'old-code')` | `setup_paths()` |
+| `old-code/` | `../obsolete/tech-selection-old-code/` (moved out of the repo folder on 2026-10-11) |
 
 ---
 

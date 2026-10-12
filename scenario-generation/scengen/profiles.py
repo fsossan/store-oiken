@@ -14,7 +14,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from .config import resolve
+from .config import DATA_DIR, resolve
 
 SEASON_MONTHS = {
     "winter": (12, 1, 2), "spring": (3, 4, 5), "summer": (6, 7, 8), "autumn": (9, 10, 11), "all": tuple(range(1, 13)),
@@ -38,10 +38,10 @@ def fit_demand_model(dcfg: dict, verbose: bool = True) -> dict:
 
     keep = np.ones(n_days, bool)
     if dcfg.get("weekday", "all") != "all" or dcfg.get("season", "all") != "all":
-        days_file = resolve("data/demand_train_days.csv")
+        days_file = DATA_DIR / "demand_train_days.csv"
         if not days_file.exists():
             raise FileNotFoundError(f"{days_file} is needed for weekday/season filters "
-                                    "(write it with tools/export_demand_train_days.m)")
+                                    "(write it with scenario-generation/tools/export_demand_train_days.m)")
         dates = pd.to_datetime(pd.read_csv(days_file)["date"])
         if len(dates) != n_days:
             raise ValueError("demand_train_days.csv does not match the training data")

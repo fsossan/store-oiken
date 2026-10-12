@@ -19,11 +19,11 @@
   },
   "demand": {
     "demand_factor": 0.06,
-    "model_file": "data/demand_gmm.npz",
+    "model_file": "../data/demand_gmm.npz",
     "seed_offset": 5675
   },
   "pv": {
-    "file": "data/pv/pv_profiles_year.csv",
+    "file": "../data/pv/pv_profiles_year.csv",
     "series": "clearsky",
     "season": "all",
     "scale": 1.0

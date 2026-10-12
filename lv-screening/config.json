@@ -1,50 +1,25 @@
 {
-  "_comment": "Settings of the lv-screening toolchain. Paths are relative to this file's folder. Scenario-specific settings live in scenarios/<name>/config.json (see scenario_defaults).",
-
-  "per_unit": {"Sb_VA": 100000, "Vb_V": 230, "V_slack_pu": 1.0},
-
+  "_comment": "Settings of the LV screening. Paths are relative to this folder; scenarios come from ../scenario-generation/output/<name>.",
+  "per_unit": {
+    "Sb_VA": 100000,
+    "Vb_V": 230,
+    "V_slack_pu": 1.0
+  },
   "demand_factor": 0.06,
   "_demand_factor_comment": "Planning demand of every connection as a fraction of its fuse-rated peak (DSO value, 6 %). Used by the one-shot snapshot; scenarios carry their own copy.",
-
   "oneshot": {
     "_comment": "Snapshot of the data sanity check: demand_factor x fuse-rated peak at every connection at the same instant, plus generation_factor x existing PV.",
     "generation_factor": 0.0
   },
-
-  "limits": {"v_min_pu": 0.9, "v_max_pu": 1.1, "line_loading_max": 1.0, "trafo_loading_max": 1.0},
-
-  "loadflow": {"max_iter": 100, "tol_pu": 1e-5, "damping": 0.7},
-
-  "demand_model": {
-    "_comment": "Household demand model (GMM on HEAPO smart-meter data, Grammatikos/Ali/Sossan 2026): fit once with `fit-demand`, then sampled by `generate`.",
-    "train_file": "../tech-selection/data/external/load_consumption_train_heapo.mat",
-    "model_file": "data/demand_gmm.npz",
-    "num_clusters": 5,
-    "gmm_order": 4,
-    "p_lb": 0,
-    "p_ub": 99,
-    "log_residuals": true,
-    "clip_residuals": true,
-    "weekday": "all",
-    "season": "all",
-    "fit_seed": 1
+  "limits": {
+    "v_min_pu": 0.9,
+    "v_max_pu": 1.1,
+    "line_loading_max": 1.0,
+    "trafo_loading_max": 1.0
   },
-
-  "scenario_defaults": {
-    "_comment": "Copied into scenarios/<name>/config.json by `new-scenario`; edit there.",
-    "time": {"step_min": 15, "days": 1, "yearly": {"enabled": true, "step_min": 60}},
-    "demand": {"demand_factor": 0.06, "model_file": "data/demand_gmm.npz", "seed_offset": 5675},
-    "pv": {"file": "data/pv/pv_profiles_year.csv", "series": "clearsky", "season": "all", "scale": 1.0},
-    "ev": {"charger_kw": 11, "duration_h": 4, "arrival_mean_h": 18, "arrival_std_h": 0.6, "arrival_min_h": 17, "arrival_max_h": 21, "seed_offset": 1230}
-  },
-
-  "sfoe": {
-    "_comment": "SFOE Energy Perspectives 2050+ (PE2050+), Scenario-cadre 2030/2040. National PV and EV are scaled to Sion+Sierre by population.",
-    "sc1_2030": {"year": 2030, "description": "Scenario 1 - Reference (ZERO Base)", "PV_national_MW": 9770, "EV_national_thousands": 930, "population_national": 9462900, "population_sion_sierre": 105042},
-    "sc2_2030": {"year": 2030, "description": "Scenario 2 - Divergence (ZERO A)", "PV_national_MW": 7650, "EV_national_thousands": 980, "population_national": 9462900, "population_sion_sierre": 105042},
-    "sc3_2030": {"year": 2030, "description": "Scenario 3 - Sector coupling (ZERO B)", "PV_national_MW": 12210, "EV_national_thousands": 870, "population_national": 9462900, "population_sion_sierre": 105042},
-    "sc1_2040": {"year": 2040, "description": "Scenario 1 - Reference (ZERO Base)", "PV_national_MW": 24070, "EV_national_thousands": 2940, "population_national": 9970300, "population_sion_sierre": 110103},
-    "sc2_2040": {"year": 2040, "description": "Scenario 2 - Divergence (ZERO A)", "PV_national_MW": 10100, "EV_national_thousands": 3230, "population_national": 9970300, "population_sion_sierre": 110103},
-    "sc3_2040": {"year": 2040, "description": "Scenario 3 - Sector coupling (ZERO B)", "PV_national_MW": 30090, "EV_national_thousands": 2520, "population_national": 9970300, "population_sion_sierre": 110103}
+  "loadflow": {
+    "max_iter": 100,
+    "tol_pu": 1e-05,
+    "damping": 0.7
   }
 }

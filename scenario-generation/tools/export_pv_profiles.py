@@ -4,7 +4,7 @@
 Same content, Python-readable: 15-min timestamps of the reference year with the
 normalised PV output (per unit of installed DC peak) for the ideal clear sky and
 for the PVGIS typical meteorological year, plus the irradiance / temperature
-reference columns. `lvgrid clearsky` writes files of the same layout.
+reference columns. `generate_scenario.py clearsky` writes files of the same layout.
 """
 import json
 import sys
@@ -15,7 +15,7 @@ import scipy.io as sio
 
 here = Path(__file__).resolve().parent
 src = Path(sys.argv[1]) if len(sys.argv) > 1 else here.parent.parent / "tech-selection" / "data" / "raw" / "pv_profiles_year.mat"
-dst = here.parent / "data" / "pv" / "pv_profiles_year.csv"
+dst = here.parent.parent / "data" / "pv" / "pv_profiles_year.csv"
 m = sio.loadmat(src, squeeze_me=True, struct_as_record=False)
 cols = ["pv_norm_clearsky", "pv_norm_measured", "poa_norm_clearsky", "poa_norm_measured",
         "ghi_norm_clearsky", "ghi_norm_measured", "temp_air", "solar_zenith"]

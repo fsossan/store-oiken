@@ -1,0 +1,99 @@
+{
+  "_comment": "Settings of the scenario generator. Paths are relative to this folder. Each scenario has its own scenarios/<name>/config.json.",
+  "demand_model": {
+    "_comment": "Household demand model (GMM on HEAPO smart-meter data, Grammatikos/Ali/Sossan 2026): fit once with `fit-demand`, then sampled by `generate`.",
+    "train_file": "../tech-selection/data/external/load_consumption_train_heapo.mat",
+    "model_file": "../data/demand_gmm.npz",
+    "num_clusters": 5,
+    "gmm_order": 4,
+    "p_lb": 0,
+    "p_ub": 99,
+    "log_residuals": true,
+    "clip_residuals": true,
+    "weekday": "all",
+    "season": "all",
+    "fit_seed": 1
+  },
+  "scenario_defaults": {
+    "_comment": "Copied into scenarios/<name>/config.json by `new-scenario`; edit there.",
+    "time": {
+      "step_min": 15,
+      "days": 1,
+      "yearly": {
+        "enabled": true,
+        "step_min": 60
+      }
+    },
+    "demand": {
+      "demand_factor": 0.06,
+      "model_file": "../data/demand_gmm.npz",
+      "seed_offset": 5675
+    },
+    "pv": {
+      "file": "../data/pv/pv_profiles_year.csv",
+      "series": "clearsky",
+      "season": "all",
+      "scale": 1.0
+    },
+    "ev": {
+      "charger_kw": 11,
+      "duration_h": 4,
+      "arrival_mean_h": 18,
+      "arrival_std_h": 0.6,
+      "arrival_min_h": 17,
+      "arrival_max_h": 21,
+      "seed_offset": 1230
+    }
+  },
+  "sfoe": {
+    "_comment": "SFOE Energy Perspectives 2050+ (PE2050+), Scenario-cadre 2030/2040. National PV and EV are scaled to Sion+Sierre by population.",
+    "sc1_2030": {
+      "year": 2030,
+      "description": "Scenario 1 - Reference (ZERO Base)",
+      "PV_national_MW": 9770,
+      "EV_national_thousands": 930,
+      "population_national": 9462900,
+      "population_sion_sierre": 105042
+    },
+    "sc2_2030": {
+      "year": 2030,
+      "description": "Scenario 2 - Divergence (ZERO A)",
+      "PV_national_MW": 7650,
+      "EV_national_thousands": 980,
+      "population_national": 9462900,
+      "population_sion_sierre": 105042
+    },
+    "sc3_2030": {
+      "year": 2030,
+      "description": "Scenario 3 - Sector coupling (ZERO B)",
+      "PV_national_MW": 12210,
+      "EV_national_thousands": 870,
+      "population_national": 9462900,
+      "population_sion_sierre": 105042
+    },
+    "sc1_2040": {
+      "year": 2040,
+      "description": "Scenario 1 - Reference (ZERO Base)",
+      "PV_national_MW": 24070,
+      "EV_national_thousands": 2940,
+      "population_national": 9970300,
+      "population_sion_sierre": 110103
+    },
+    "sc2_2040": {
+      "year": 2040,
+      "description": "Scenario 2 - Divergence (ZERO A)",
+      "PV_national_MW": 10100,
+      "EV_national_thousands": 3230,
+      "population_national": 9970300,
+      "population_sion_sierre": 110103
+    },
+    "sc3_2040": {
+      "year": 2040,
+      "description": "Scenario 3 - Sector coupling (ZERO B)",
+      "PV_national_MW": 30090,
+      "EV_national_thousands": 2520,
+      "population_national": 9970300,
+      "population_sion_sierre": 110103
+    }
+  }
+}

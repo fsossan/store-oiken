@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from .config import RESULTS_DIR, load_config, resolve
+from .config import RESULTS_DIR, load_config
 
 
 def _networks_arg(portfolio, spec: str | None) -> list[str]:
@@ -27,16 +27,6 @@ def _networks_arg(portfolio, spec: str | None) -> list[str]:
     return select_networks(portfolio, spec)
 
 
-def cmd_fit_demand(a):
-    from .profiles import fit_demand_model, save_demand_model
-    cfg = load_config(a.config)
-    out = resolve(cfg["demand_model"]["model_file"])
-    print(f"fitting the demand model from {resolve(cfg['demand_model']['train_file'])}")
-    model = fit_demand_model(cfg["demand_model"])
-    save_demand_model(model, out)
-    print(f"-> {out}")
-
-
 def cmd_oneshot(a):
     from .data import load_portfolio
     from .screening import run
@@ -44,24 +34,6 @@ def cmd_oneshot(a):
     P = load_portfolio()
     ids = _networks_arg(P, a.networks)
     run(P, cfg, ids, out_dir=a.out, save_details=not a.no_details)
-
-
-def cmd_new_scenario(a):
-    from .scenario import new_scenario_config, scenario_dir, write_scenario_config
-    cfg = load_config(a.config)
-    name = a.name or a.sfoe
-    if (scenario_dir(name) / "config.json").exists() and not a.force:
-        raise SystemExit(f"{scenario_dir(name) / 'config.json'} exists; use --force to overwrite or --name for another folder")
-    path = write_scenario_config(new_scenario_config(cfg, a.sfoe, name))
-    print(f"-> {path}  (edit it, then: python -m lvgrid generate {name})")
-
-
-def cmd_generate(a):
-    from .data import load_portfolio
-    from .scenario import generate
-    P = load_portfolio()
-    ids = _networks_arg(P, a.networks) if a.networks else None
-    generate(P, a.name, ids)
 
 
 def cmd_screen(a):
@@ -105,14 +77,11 @@ def cmd_geo(a):
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(prog="python -m lvgrid", description="Stage-1 screening of the OIKEN LV portfolio")
+    ap = argparse.ArgumentParser(prog="python -m lvgrid", description="Load-flow screening of the OIKEN LV portfolio")
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--config", help="settings file (default: lv-screening/config.json)")
     sub = ap.add_subparsers(dest="cmd", required=True)
     sp = lambda name, **kw: sub.add_parser(name, parents=[common], **kw)   # noqa: E731
-
-    p = sp("fit-demand", help="fit and cache the household demand model (needs the training .mat)")
-    p.set_defaults(func=cmd_fit_demand)
 
     p = sp("oneshot", help="data sanity check: one load flow per network at the planning snapshot")
     p.add_argument("--networks", default="all", help="all | id,id,... | @<run folder of a previous run> (its ok networks)")
@@ -120,19 +89,8 @@ def main(argv=None) -> int:
     p.add_argument("--no-details", action="store_true", help="skip the per-network .npz files (no dashboard pages)")
     p.set_defaults(func=cmd_oneshot)
 
-    p = sp("new-scenario", help="stage 1: write scenarios/<name>/config.json from an SFOE scenario of config.json")
-    p.add_argument("sfoe", help="SFOE key: sc1_2030, sc2_2030, sc3_2030, sc1_2040, sc2_2040, sc3_2040")
-    p.add_argument("--name", help="scenario folder name (default: the SFOE key)")
-    p.add_argument("--force", action="store_true", help="overwrite an existing config.json")
-    p.set_defaults(func=cmd_new_scenario)
-
-    p = sp("generate", help="stage 2: allocation + daily per-node and yearly per-network injections (CSV) from scenarios/<name>/config.json")
-    p.add_argument("name", help="scenario folder under scenarios/")
-    p.add_argument("--networks", help="id,id,... to generate a subset (tests); default all networks")
-    p.set_defaults(func=cmd_generate)
-
-    p = sp("screen", help="stage 3: daily load flow of every network with the scenario's injections")
-    p.add_argument("--scenario", required=True, help="generated scenario folder under scenarios/")
+    p = sp("screen", help="daily load flow of every network with a generated scenario's injections")
+    p.add_argument("--scenario", required=True, help="scenario name (../scenario-generation/output/<name>) or a path to a generated folder")
     p.add_argument("--networks", default="all", help="all | id,id,... | @<oneshot run folder> (its ok networks)")
     p.add_argument("--cases", help="comma list among demand,demand+pv,demand+pv+ev (default all three)")
     p.add_argument("--out", help="results folder (default results/<timestamp>_<scenario>)")
@@ -155,15 +113,7 @@ def main(argv=None) -> int:
     p.add_argument("run_dir", help="results folder (or its name under results/)")
     p.set_defaults(func=cmd_aggregate)
 
-    sub.add_parser("clearsky", help="clear-sky PV profile for a location (pvlib); `clearsky -h` for options",
-                   add_help=False)
-
-    a, rest = ap.parse_known_args(argv)
-    if a.cmd == "clearsky":                       # has its own option parser
-        from .clearsky import main as clearsky_main
-        return clearsky_main(rest)
-    if rest:
-        ap.error(f"unrecognized arguments: {' '.join(rest)}")
+    a = ap.parse_args(argv)
     return a.func(a) or 0
 
 

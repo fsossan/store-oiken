@@ -1,15 +1,12 @@
-"""Per-node power time series of one network, and their CSV form.
+"""Per-node power time series of one network (read from a generated scenario).
 
-Three streams, all in 3-phase kW with consumption positive:
-    demand  demand_factor x fuse-rated peak (P + jQ, constant power factor)
-            times a synthetic household day shape per node
-    pv      scenario kWp per node times the normalised PV profile
-    ev      scenario EV count per node, uncontrolled evening charging
-`case_injection_pu` combines them into the net injection the load flow needs.
+Three streams, all in 3-phase kW with consumption positive: demand (P + jQ),
+PV generation, EV charging. `case_injection_pu` combines them into the net
+injection the load flow needs.
 
-CSV layout of scenarios/<name>/daily/<network>.csv (one row per step, wide):
-    step, hour, <node>:demand_kw, <node>:demand_kvar, <node>:pv_kw, <node>:ev_kw ...
-Only nodes with a non-zero stream get a column.
+CSV layout written by scenario-generation (daily/<network>.csv, one row per
+step, wide): step, hour, <node>:demand_kw, <node>:demand_kvar, <node>:pv_kw,
+<node>:ev_kw ... (only nodes with a non-zero stream have a column).
 """
 from __future__ import annotations
 
@@ -54,17 +51,6 @@ def case_injection_pu(inj: Injections, case: str, cfg: dict) -> np.ndarray:
     if "ev" in streams:
         s -= inj.ev_kw
     return s[:, 1:] / kw_per_pu(cfg)
-
-
-def write_daily_csv(path: Path, nodes: list[str], time_h: np.ndarray, demand_kw: np.ndarray,
-                    demand_kvar: np.ndarray, pv_kw: np.ndarray, ev_kw: np.ndarray) -> None:
-    """Arrays are [T x n] in the order of `nodes`; all-zero columns are left out."""
-    cols = {"step": np.arange(len(time_h)), "hour": time_h}
-    for name, arr in zip(STREAMS, (demand_kw, demand_kvar, pv_kw, ev_kw)):
-        for j, node in enumerate(nodes):
-            if np.any(arr[:, j]):
-                cols[f"{node}:{name}"] = arr[:, j]
-    pd.DataFrame(cols).to_csv(path, index=False, float_format="%.5g")
 
 
 def read_daily_csv(path: Path, net: Network) -> Injections:

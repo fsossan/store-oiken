@@ -7,8 +7,8 @@ be read by scanning for its 8 KB data pages and decoding the row format
 one-off tool: it only knows the columns we need from noeud_NOD and finds the
 table through the allocation-unit id printed in each page header.
 
-    python tools/extract_nodes_from_bak.py <backup.bak> [-o data/geo/nodes_db.csv]
-    python tools/extract_nodes_from_bak.py <backup.bak> --discover CTMT1078   # print page ids holding a code
+    python data/tools/extract_nodes_from_bak.py <backup.bak> [-o data/geo/nodes_db.csv]
+    python data/tools/extract_nodes_from_bak.py <backup.bak> --discover CTMT1078   # print page ids holding a code
 
 Output columns: id_nod, code, name, node_class (1 = LV substation),
 x_db, y_db (as stored: X = north, Y = east, LV03 or LV95),
@@ -168,7 +168,7 @@ def discover(path: Path, code: str):
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("bak", type=Path)
-    ap.add_argument("-o", "--out", type=Path, default=Path(__file__).resolve().parent.parent / "data" / "geo" / "nodes_db.csv")
+    ap.add_argument("-o", "--out", type=Path, default=Path(__file__).resolve().parent.parent / "geo" / "nodes_db.csv")
     ap.add_argument("--obj-id", type=int, default=OBJ_ID)
     ap.add_argument("--index-id", type=int, default=INDEX_ID)
     ap.add_argument("--discover", metavar="CODE", help="print the pages holding this node code and exit")

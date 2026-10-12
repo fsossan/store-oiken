@@ -12,15 +12,15 @@ function export_lv_grids(mat_file, out_dir)
 %   Column names are the original Excel headers in snake_case.
 %
 %   Run from the repo root:
-%       matlab -batch "run('lv-screening/tools/export_lv_grids.m')"
-%   or, inside MATLAB, cd to lv-screening/tools and call export_lv_grids.
+%       matlab -batch "run('data/tools/export_lv_grids.m')"
+%   or, inside MATLAB, cd to data/tools and call export_lv_grids.
 
 here = fileparts(mfilename('fullpath'));
 if nargin < 1 || isempty(mat_file)
     mat_file = fullfile(here, '..', '..', 'tech-selection', 'data', 'raw', 'lv_grids.mat');
 end
 if nargin < 2 || isempty(out_dir)
-    out_dir = fullfile(here, '..', 'data', 'lv_grids');
+    out_dir = fullfile(here, '..', 'lv_grids');
 end
 if ~isfolder(out_dir); mkdir(out_dir); end
 

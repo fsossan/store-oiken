@@ -7,9 +7,9 @@ transposition, Faiman cell temperature, PVWatts DC with the given temperature
 coefficient). Only the clear-sky series is produced; the `measured` series of
 the reference file comes from a PVGIS typical meteorological year.
 
-    python -m lvgrid clearsky                          # Sion/Sierre defaults, 2019
-    python -m lvgrid clearsky --lat 46.29 --lon 7.53 --tilt 30 --azimuth 180 --year 2025 -o data/pv/my_site.csv
-    python -m lvgrid clearsky --day 2019-06-21         # also print that day's profile
+    python generate_scenario.py clearsky                          # Sion/Sierre defaults, 2019
+    python generate_scenario.py clearsky --lat 46.29 --lon 7.53 --tilt 30 --azimuth 180 --year 2025 -o data/pv/my_site.csv
+    python generate_scenario.py clearsky --day 2019-06-21         # also print that day's profile
 """
 from __future__ import annotations
 
@@ -59,7 +59,7 @@ def write_profile(df: pd.DataFrame, meta: dict, out: Path) -> None:
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(prog="python -m lvgrid clearsky", description=__doc__,
+    ap = argparse.ArgumentParser(prog="generate_scenario.py clearsky", description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--lat", type=float, default=DEFAULTS["latitude"])
     ap.add_argument("--lon", type=float, default=DEFAULTS["longitude"])

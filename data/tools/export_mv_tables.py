@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""One-off: the MV-level sheets of the OIKEN Excel export -> data/mv/*.csv
+"""One-off: the MV-level sheets of the OIKEN Excel export -> data/mv/*.csv  (run: python data/tools/export_mv_tables.py)
 
     mv_lines.csv          2_MV Grid_*.xlsx   one row per MV line, column mv_grid = sheet id
     mv_stations.csv       4_MV Stations_*.xlsx  switches/busbars of MV switching stations, column station = sheet id
@@ -18,7 +18,7 @@ import pandas as pd
 warnings.filterwarnings("ignore")
 here = Path(__file__).resolve().parent
 src = Path(sys.argv[1]) if len(sys.argv) > 1 else here.parent.parent / "obsolete" / "sanity_check" / "network_data" / "excel_data"
-out = here.parent / "data" / "mv"
+out = here.parent / "mv"
 out.mkdir(parents=True, exist_ok=True)
 
 LINE_COLS = {"From": "from", "To": "to", "Line": "line", "Length(m)": "length_m", "R(Ohm/km)": "r_ohm_km", "X(Ohm/km)": "x_ohm_km",

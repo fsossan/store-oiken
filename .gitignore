@@ -22,3 +22,12 @@ lv-screening/results/
 
 # Duplicate of tech-selection/data/external/load_consumption_train_heapo.mat (163 MB)
 obsolete/sanity_check/util/load_consumption_train_heapo.mat
+
+# Generated scenario files (regenerate with `python -m lvgrid generate <name>`); configs stay tracked
+lv-screening/scenarios/*/allocation.csv
+lv-screening/scenarios/*/networks.csv
+lv-screening/scenarios/*/pv_day.csv
+lv-screening/scenarios/*/scenario.json
+lv-screening/scenarios/*/daily/
+lv-screening/scenarios/*/yearly/
+lv-screening/scenarios/_test_*/

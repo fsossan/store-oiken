@@ -103,28 +103,33 @@ def load_demand_model(path: Path) -> dict:
         return {k: (z[k].item() if z[k].ndim == 0 else z[k]) for k in z.files}
 
 
-def sample_demand(model: dict, n_nodes: int, n_days: int, rng: np.random.Generator):
-    """Dimensionless day shapes [n_nodes x n_days x S] and the cluster of each node."""
+def sample_demand(model: dict, n_nodes: int, days, seed: int):
+    """Dimensionless day shapes [n_nodes x len(days) x S] and the cluster of each node.
+
+    `days` are calendar day indices (0..364). Clusters come from one generator
+    seeded by (seed, 0) and each day from its own generator seeded by (seed,
+    1 + day), so a given day is the same whatever other days are drawn."""
     K, S = int(model["n_clusters"]), int(model["steps_per_day"])
-    clusters = rng.choice(K, size=n_nodes, p=model["cluster_prob"]) + 1
-    shape = np.zeros((n_nodes, n_days, S))
-    for c in range(1, K + 1):
-        idx = np.flatnonzero(clusters == c)
-        if len(idx) == 0:
-            continue
-        w, mu, L = model[f"c{c}_w"], model[f"c{c}_mu"], model[f"c{c}_L"]
-        n = len(idx) * n_days
-        comp = rng.choice(len(w), size=n, p=w / w.sum())
-        z = rng.standard_normal((n, S))
-        res = np.empty((n, S))
-        for g in range(len(w)):                      # x = mu_g + L_g z, per mixture component
-            sel = comp == g
-            res[sel] = mu[g] + z[sel] @ L[g].T
-        if model["clip_residuals"]:
-            res = np.clip(res, model["cluster_lb"][c - 1], model["cluster_ub"][c - 1])
-        base = model["cluster_means"][c - 1]
-        day = base * (np.exp(res) if model["log_residuals"] else res)
-        shape[idx] = day.reshape(len(idx), n_days, S)
+    days = [int(d) for d in days]
+    clusters = np.random.default_rng([seed, 0]).choice(K, size=n_nodes, p=model["cluster_prob"]) + 1
+    shape = np.zeros((n_nodes, len(days), S))
+    members = {c: np.flatnonzero(clusters == c) for c in range(1, K + 1)}
+    for j, d in enumerate(days):
+        rng = np.random.default_rng([seed, 1 + d])
+        for c, idx in members.items():
+            if len(idx) == 0:
+                continue
+            w, mu, L = model[f"c{c}_w"], model[f"c{c}_mu"], model[f"c{c}_L"]
+            comp = rng.choice(len(w), size=len(idx), p=w / w.sum())
+            z = rng.standard_normal((len(idx), S))
+            res = np.empty((len(idx), S))
+            for g in range(len(w)):                      # x = mu_g + L_g z, per mixture component
+                sel = comp == g
+                res[sel] = mu[g] + z[sel] @ L[g].T
+            if model["clip_residuals"]:
+                res = np.clip(res, model["cluster_lb"][c - 1], model["cluster_ub"][c - 1])
+            base = model["cluster_means"][c - 1]
+            shape[idx, j] = base * (np.exp(res) if model["log_residuals"] else res)
     return shape, clusters
 
 
@@ -140,10 +145,8 @@ def load_pv_year(path: Path) -> pd.DataFrame:
     return df
 
 
-def pv_representative_day(pv_year: pd.DataFrame, series: str, season: str, step_min: int):
-    """Normalised PV of the real day closest (RMSE) to the mean shape of the season.
-
-    Returns (profile [S], date string, day index)."""
+def pv_year_series(pv_year: pd.DataFrame, series: str, step_min: int) -> np.ndarray:
+    """The normalised yearly PV series [n_days x S]."""
     S = 24 * 60 // step_min
     col = f"pv_norm_{series}"
     if col not in pv_year:
@@ -151,7 +154,15 @@ def pv_representative_day(pv_year: pd.DataFrame, series: str, season: str, step_
     y = pv_year[col].to_numpy(float)
     if len(y) % S:
         raise ValueError(f"PV profile has {len(y)} samples, not a whole number of {S}-step days")
-    days = y.reshape(-1, S)
+    return y.reshape(-1, S)
+
+
+def pv_representative_day(pv_year: pd.DataFrame, series: str, season: str, step_min: int):
+    """Normalised PV of the real day closest (RMSE) to the mean shape of the season.
+
+    Returns (profile [S], date string, day index)."""
+    S = 24 * 60 // step_min
+    days = pv_year_series(pv_year, series, step_min)
     months = pv_year["time"].dt.month.to_numpy()[::S]
     cand = np.flatnonzero(season_mask(months, season))
     mean_day = days[cand].mean(axis=0)

@@ -25,11 +25,11 @@ node coordinates, fitted demand model); see "Data" below.
 
 ```bash
 python3 -m lvgrid oneshot                              # sanity check of every network -> results/<stamp>_oneshot/
-python3 -m lvgrid scenario --scenario sc1_2040         # scenario folder: PV/EV per node, PV day, settings -> scenarios/sc1_2040/
-python3 -m lvgrid scenario --scenario sc1_2040 --name sc1_2040_custom   # a copy to edit (allocation.csv) and screen under its own name
-python3 -m lvgrid screen --scenario sc1_2040           # scenario screening, all networks, 3 cases (builds the folder if absent)
+python3 -m lvgrid new-scenario sc1_2040                # stage 1: scenarios/sc1_2040/config.json (edit it)
+python3 -m lvgrid new-scenario sc1_2040 --name sc1_2040_pv150   # a second configuration to edit under its own name
+python3 -m lvgrid generate sc1_2040                    # stage 2: allocation + daily/yearly injections (CSV), ~20 min with the yearly files
+python3 -m lvgrid screen --scenario sc1_2040           # stage 3: screening of all networks, 3 cases, 25 s
 python3 -m lvgrid screen --scenario sc1_2040 --networks @results/<oneshot run>   # only networks that passed the sanity check
-python3 -m lvgrid screen --scenario sc1_2030 --networks 101,230 --days 7
 python3 -m lvgrid dashboard results/<run>              # -> results/<run>/dashboard/index.html (+ one page per flagged network)
 python3 -m lvgrid dashboard results/<run> --networks all --max-pages 2000
 python3 -m lvgrid geo                                  # rebuild data/geo/node_coordinates.csv from nodes_db.csv
@@ -43,14 +43,44 @@ python3 -m pytest tests                                # smoke tests (15 s)
 `--out` names the results folder; without it, `results/<timestamp>_<label>/`.
 Nothing is overwritten unless you reuse `--out`.
 
-Flow: `config.json` (SFOE table, profile settings) → `scenario` writes a
-frozen folder under `scenarios/<name>/` (allocation per node, the PV day,
-the EV and demand settings, totals, a hash of the allocation) → `screen`
-reads that folder and records its name and hash in `run.json` → `dashboard`
-and `aggregate` read the run. A scenario folder is the hand-over point to the
-MATLAB MILP too (`readtable('scenarios/sc1_2040/allocation.csv')`), and an
-edited `allocation.csv` is a valid custom scenario (its hash is then marked
-"edited after creation").
+## The three stages
+
+```
+1. scenario configuration     scenarios/<name>/config.json          new-scenario (from the SFOE table in config.json), then edit
+2. scenario generation        scenarios/<name>/allocation.csv       generate: config + grid tables -> injections as CSV
+                              scenarios/<name>/daily/<network>.csv      per-node series of the representative day(s)
+                              scenarios/<name>/yearly/<network>.csv     per-network sums over the year
+3. LV screening               results/<run>/                        screen: load flow of every network from the daily CSVs
+                                                                    -> dashboard, aggregate (HV/MV substations)
+```
+
+**Scenario configuration** (`config.json` of the scenario): the SFOE figures
+(national PV MW and EV fleet, populations), the horizon (`step_min`, number
+of `days` in the daily product, whether and at which resolution the `yearly`
+product is written), the demand settings (`demand_factor`, demand model file,
+seed), the PV settings (profile file, series, season, scale) and the EV
+charging settings. `new-scenario` fills it from `scenario_defaults` and the
+`sfoe` table of the global `config.json`; everything after that is per
+scenario and lives in that file.
+
+**Generation** (`generate <name>`): the allocation (below), then per network
+the demand, PV and EV series of every rated node. `daily/<network>.csv` is
+wide, one row per step and one column per node and stream
+(`<node>:demand_kw`, `:demand_kvar`, `:pv_kw`, `:ev_kw`, consumption
+positive, 3-phase kW); `yearly/<network>.csv` sums the nodes over the full
+year at `yearly.step_min` (hourly by default; 8760 rows, 1116 files, about
+450 MB per scenario). The daily product is the yearly series on the
+representative PV day, so both are consistent, and every (network, day) has
+its own seed, so a day does not change when more days are generated.
+`scenario.json` records totals, the PV day, sizes, hashes of `config.json`
+and `allocation.csv` and the version. MATLAB reads the same files with
+`readtable`. Generated folders are not in git (regenerate with `generate`);
+the configurations are.
+
+**Screening** (`screen --scenario <name>`): reads `daily/<network>.csv`,
+runs the three cases and records the scenario name and hashes in `run.json`
+(flagged `edited_after_generation` if the config or allocation changed after
+the files were generated).
 
 ## What the runs do
 
@@ -63,25 +93,25 @@ connected to the slack), not to represent a real operating point. Status per
 network: `ok`, `violation` (voltage outside 0.9–1.1 pu, line or transformer
 above its rating), `not_converged`, `topology_error`, `build_error`.
 
-**Scenario** (`scenario`). The SFOE national PV capacity and EV fleet of the
-chosen scenario are scaled to Sion+Sierre by population, split between
+**Allocation** (part of `generate`). The SFOE national PV capacity and EV
+fleet of the scenario are scaled to Sion+Sierre by population, split between
 networks in proportion to their fuse-rated peak and within a network in
-proportion to each node's PLmax (EVs as integers, largest remainder). The
-folder also freezes the PV day (the real day of the yearly profile closest to
-the season's mean shape), the EV charging and demand settings.
+proportion to each node's PLmax (EVs as integers, largest remainder). The PV
+day is the real day of the yearly profile closest to the season's mean shape.
 
-**Scenario screening** (`screen`). One synthetic day (96 steps of 15 min) per
-network with three nested cases, so a violation can be attributed to its driver:
+**Scenario screening** (`screen`). The daily product (96 steps of 15 min per
+day) of every network with three nested cases, so a violation can be
+attributed to its driver:
 
 | case | injections |
 |---|---|
-| `demand` | household demand only: 6 % of the fuse-rated peak per node times a synthetic household day (GMM fitted on Swiss smart-meter data, one random cluster and day per node) |
-| `demand+pv` | plus the scenario PV: node kWp from the scenario folder times its PV day |
-| `demand+pv+ev` | plus the scenario EVs: node counts from the scenario folder, each vehicle charging at 11 kW for 4 h after a truncated-normal arrival (mean 18:00, σ 0.6 h, 17:00–21:00) |
+| `demand` | household demand only: 6 % of the fuse-rated peak per node times a synthetic household day (GMM fitted on Swiss smart-meter data, one random cluster per node and one day draw per node and day) |
+| `demand+pv` | plus the scenario PV: node kWp times the normalised PV profile of the day |
+| `demand+pv+ev` | plus the scenario EVs: each vehicle charging at 11 kW for 4 h after a truncated-normal arrival (mean 18:00, σ 0.6 h, 17:00–21:00), drawn per day |
 
-Seeds derive from the network number, so a network sees the same demand and
-EV realisation in every scenario; scenarios differ only by PV kWp and EV counts.
-`--days N` draws N demand days per node and repeats the PV and EV day.
+Seeds derive from the network number and the day, so a network sees the same
+demand and EV realisation in every scenario (with the same seed offsets);
+scenarios differ only by PV kWp and EV counts.
 
 **Model.** Single-phase equivalent, Sb = 100 kVA, Vb = 230 V; the MV side of
 the transformer is the slack at 1.0 pu; closed LV switches of the substation
@@ -180,14 +210,15 @@ LV03/LV95 values in the DB are normalised to LV95.
 | `data/lv_grids/lines.csv`, `substations.csv` | `../tech-selection/data/raw/lv_grids.mat` (= `../obsolete/sanity_check/data_v2.mat`, the patched OIKEN export) | `matlab -batch "run('tools/export_lv_grids.m')"` |
 | `data/pv/pv_profiles_year.csv` | `../tech-selection/data/raw/pv_profiles_year.mat` (pvlib, 2019, Sion, 35° south; clear sky and PVGIS TMY) | `python3 tools/export_pv_profiles.py` |
 | `data/pv/clearsky_sion_sierre_2019.csv` | `python -m lvgrid clearsky` (constant 20 °C air temperature: 5 % lower annual yield than the reference, same daily shape) | same |
-| `data/demand_gmm.npz` | fitted from `../tech-selection/data/external/load_consumption_train_heapo.mat` (not in git) | `python -m lvgrid fit-demand` |
+| `data/demand_gmm.npz` | fitted from `../tech-selection/data/external/load_consumption_train_heapo.mat` (not in git); settings in `demand_model` of config.json | `python -m lvgrid fit-demand` |
 | `data/demand_train_days.csv` | calendar of the training days, for weekday/season filters | `tools/export_demand_train_days.m` |
 | `data/geo/*.csv` | DB backup `tndb_esr_test_03102024.bak` (not in git) | `tools/extract_nodes_from_bak.py` + `python -m lvgrid geo` |
 | `data/mv/mv_lines.csv`, `mv_stations.csv`, `hvmv_substations.csv` | MV sheets of the OIKEN Excel export (`../obsolete/sanity_check/network_data/excel_data/`) | `python3 tools/export_mv_tables.py` |
 | `data/mv/lv_to_hvmv.csv`, `hvmv.csv` | derived from the above and the LV substation tables | `python -m lvgrid mv-map` |
 
-All settings are in `config.json` (per-unit base, one-shot factors, limits,
-load-flow tolerances, demand/PV/EV profile parameters, SFOE scenario table).
+Global settings are in `config.json` (per-unit base, one-shot factors,
+limits, load-flow tolerances, demand-model fit, scenario defaults, SFOE
+table); everything specific to a scenario is in its own `config.json`.
 
 ## Checks against the MATLAB results
 
@@ -197,9 +228,11 @@ load-flow tolerances, demand/PV/EV profile parameters, SFOE scenario table).
   0.002 pu), overloaded-line counts are identical. Transformer loadings of the
   194 multi-transformer networks are lower than in MATLAB (parallel
   transformers, see "Model").
-* sc1_2040 on the 1036 healthy networks: 305 networks with violations (legacy
-  284), 12 not fully converged (legacy 11); violation kinds 159 undervoltage /
-  39 overvoltage / 221 line / 193 transformer (legacy 147 / 45 / 263 / 163).
+* sc1_2040 on the 1036 healthy networks: about 300 networks with violations
+  (legacy 284), a dozen not fully converged (legacy 11); violation kinds of
+  the order of 160 undervoltage / 40 overvoltage / 220 line / 190 transformer
+  (legacy 147 / 45 / 263 / 163); the exact counts depend on the random
+  realisation of demand and EV arrivals.
   The individual networks differ because demand and EV draws are different
   random realisations, because the legacy run charged one vehicle per EV node
   regardless of the allocated count, and because parallel transformers now
@@ -216,7 +249,7 @@ config.json          all settings
 lvgrid/              the package: config, data, network, loadflow, scenario,
                      profiles, injections, screening, dashboard, geo, mv, clearsky, __main__
 tests/               pytest smoke tests
-scenarios/           scenario folders (tracked; regenerate with `scenario --force`)
+scenarios/<name>/    config.json tracked; generated files (allocation, daily/, yearly/, scenario.json) ignored
 tools/               one-off exports: export_lv_grids.m, export_pv_profiles.py, export_mv_tables.py,
                      export_demand_train_days.m, extract_nodes_from_bak.py
 data/                inputs in Python-readable form (tracked)

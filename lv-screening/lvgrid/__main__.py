@@ -30,9 +30,9 @@ def _networks_arg(portfolio, spec: str | None) -> list[str]:
 def cmd_fit_demand(a):
     from .profiles import fit_demand_model, save_demand_model
     cfg = load_config(a.config)
-    out = resolve(cfg["demand"]["model_file"])
-    print(f"fitting the demand model from {resolve(cfg['demand']['train_file'])}")
-    model = fit_demand_model(cfg["demand"])
+    out = resolve(cfg["demand_model"]["model_file"])
+    print(f"fitting the demand model from {resolve(cfg['demand_model']['train_file'])}")
+    model = fit_demand_model(cfg["demand_model"])
     save_demand_model(model, out)
     print(f"-> {out}")
 
@@ -46,31 +46,33 @@ def cmd_oneshot(a):
     run(P, cfg, ids, out_dir=a.out, save_details=not a.no_details)
 
 
-def cmd_scenario(a):
-    from .data import load_portfolio
-    from .scenario import build_scenario, save_scenario, scenario_dir
+def cmd_new_scenario(a):
+    from .scenario import new_scenario_config, scenario_dir, write_scenario_config
     cfg = load_config(a.config)
-    name = a.name or a.scenario
-    if (scenario_dir(name) / "scenario.json").exists() and not a.force:
-        raise SystemExit(f"{scenario_dir(name)} exists; use --force to rebuild it or --name for another folder")
-    sc = build_scenario(load_portfolio(), cfg, a.scenario, name)
-    folder = save_scenario(sc)
-    m = sc.meta
-    print(f"{name}: {m['sfoe']} {m['year']}, population share {m['population_ratio']:.2%}, "
-          f"PV {m['pv_allocated_kwp'] / 1e3:,.1f} MWp and {m['ev_allocated']:,} EVs over {m['n_networks']} networks / {m['n_nodes']} nodes, "
-          f"PV day {m['pv_date']} -> {folder}")
+    name = a.name or a.sfoe
+    if (scenario_dir(name) / "config.json").exists() and not a.force:
+        raise SystemExit(f"{scenario_dir(name) / 'config.json'} exists; use --force to overwrite or --name for another folder")
+    path = write_scenario_config(new_scenario_config(cfg, a.sfoe, name))
+    print(f"-> {path}  (edit it, then: python -m lvgrid generate {name})")
+
+
+def cmd_generate(a):
+    from .data import load_portfolio
+    from .scenario import generate
+    P = load_portfolio()
+    ids = _networks_arg(P, a.networks) if a.networks else None
+    generate(P, a.name, ids)
 
 
 def cmd_screen(a):
     from .data import load_portfolio
-    from .scenario import get_scenario
+    from .scenario import load_scenario
     from .screening import run
     cfg = load_config(a.config)
     P = load_portfolio()
     ids = _networks_arg(P, a.networks)
     cases = a.cases.split(",") if a.cases else None
-    sc = get_scenario(P, cfg, a.scenario)
-    run(P, cfg, ids, scenario=sc, cases=cases, n_days=a.days, out_dir=a.out, save_details=not a.no_details)
+    run(P, cfg, ids, scenario=load_scenario(a.scenario), cases=cases, out_dir=a.out, save_details=not a.no_details)
 
 
 def cmd_dashboard(a):
@@ -118,17 +120,21 @@ def main(argv=None) -> int:
     p.add_argument("--no-details", action="store_true", help="skip the per-network .npz files (no dashboard pages)")
     p.set_defaults(func=cmd_oneshot)
 
-    p = sp("scenario", help="build a scenario folder (PV/EV allocation per node, PV day, profile settings) -> scenarios/<name>/")
-    p.add_argument("--scenario", required=True, help="SFOE key in config.json: sc1_2030, sc2_2030, sc3_2030, sc1_2040, ...")
-    p.add_argument("--name", help="folder name (default: the SFOE key); edit its allocation.csv for a custom scenario")
-    p.add_argument("--force", action="store_true", help="rebuild an existing folder")
-    p.set_defaults(func=cmd_scenario)
+    p = sp("new-scenario", help="stage 1: write scenarios/<name>/config.json from an SFOE scenario of config.json")
+    p.add_argument("sfoe", help="SFOE key: sc1_2030, sc2_2030, sc3_2030, sc1_2040, sc2_2040, sc3_2040")
+    p.add_argument("--name", help="scenario folder name (default: the SFOE key)")
+    p.add_argument("--force", action="store_true", help="overwrite an existing config.json")
+    p.set_defaults(func=cmd_new_scenario)
 
-    p = sp("screen", help="scenario screening: daily load flow with the scenario's PV/EV injections")
-    p.add_argument("--scenario", required=True, help="scenario folder under scenarios/ (built on the fly from the SFOE key if absent)")
+    p = sp("generate", help="stage 2: allocation + daily per-node and yearly per-network injections (CSV) from scenarios/<name>/config.json")
+    p.add_argument("name", help="scenario folder under scenarios/")
+    p.add_argument("--networks", help="id,id,... to generate a subset (tests); default all networks")
+    p.set_defaults(func=cmd_generate)
+
+    p = sp("screen", help="stage 3: daily load flow of every network with the scenario's injections")
+    p.add_argument("--scenario", required=True, help="generated scenario folder under scenarios/")
     p.add_argument("--networks", default="all", help="all | id,id,... | @<oneshot run folder> (its ok networks)")
     p.add_argument("--cases", help="comma list among demand,demand+pv,demand+pv+ev (default all three)")
-    p.add_argument("--days", type=int, default=1, help="simulated days (demand drawn per day, PV/EV day repeated)")
     p.add_argument("--out", help="results folder (default results/<timestamp>_<scenario>)")
     p.add_argument("--no-details", action="store_true")
     p.set_defaults(func=cmd_screen)

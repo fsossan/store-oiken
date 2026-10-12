@@ -1,30 +1,33 @@
-"""Per-node power time series of one network for a scenario.
+"""Per-node power time series of one network, and their CSV form.
 
 Three streams, all in 3-phase kW with consumption positive:
     demand  demand_factor x fuse-rated peak (P + jQ, constant power factor)
-            times a synthetic household day shape per node (demand model)
-    pv      scenario kWp per node times the scenario's PV day
+            times a synthetic household day shape per node
+    pv      scenario kWp per node times the normalised PV profile
     ev      scenario EV count per node, uncontrolled evening charging
 `case_injection_pu` combines them into the net injection the load flow needs.
-Seeds derive from the network number so a network gets the same demand and EV
-realisation in every scenario; scenarios differ only by PV and EV magnitudes.
+
+CSV layout of scenarios/<name>/daily/<network>.csv (one row per step, wide):
+    step, hour, <node>:demand_kw, <node>:demand_kvar, <node>:pv_kw, <node>:ev_kw ...
+Only nodes with a non-zero stream get a column.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from pathlib import Path
 
 import numpy as np
+import pandas as pd
 
 from .config import kw_per_pu
 from .network import Network
-from .profiles import ev_node_profiles, sample_demand
-from .scenario import Scenario
 
 CASES = {
     "demand": ("demand",),
     "demand+pv": ("demand", "pv"),
     "demand+pv+ev": ("demand", "pv", "ev"),
 }
+STREAMS = ("demand_kw", "demand_kvar", "pv_kw", "ev_kw")
 
 
 @dataclass
@@ -40,35 +43,6 @@ class Injections:
                 "ev_kw": self.ev_kw.sum(axis=1)}
 
 
-def build_injections(net: Network, sc: Scenario, demand_model: dict, n_days: int = 1) -> Injections:
-    """net must carry the scenario's pv_kwp / ev_count (Scenario.apply)."""
-    S = len(sc.pv_day)
-    N = net.n_nodes
-    T = S * n_days
-    time_h = np.arange(T) * sc.step_min / 60.0
-
-    nominal = sc.demand["demand_factor"] * (net.plmax_kw + 1j * net.qlmax_kvar)
-    has_d = np.flatnonzero(nominal.real > 0)
-    demand = np.zeros((T, N), complex)
-    clusters = np.zeros(N, int)
-    if len(has_d):
-        rng = np.random.default_rng(net.num + sc.demand["seed_offset"])
-        shape, cl = sample_demand(demand_model, len(has_d), n_days, rng)        # [n x D x S]
-        demand[:, has_d] = shape.reshape(len(has_d), T).T * nominal[has_d][None, :]
-        clusters[has_d] = cl
-
-    pv = np.tile(sc.pv_day, n_days)[:, None] * net.pv_kwp[None, :] if net.pv_kwp.sum() > 0 else np.zeros((T, N))
-
-    ev = np.zeros((T, N))
-    has_e = np.flatnonzero(net.ev_count > 0)
-    if len(has_e):
-        rng = np.random.default_rng(net.num + sc.ev["seed_offset"])
-        ev_day = ev_node_profiles(net.ev_count[has_e], sc.ev, sc.step_min, rng)   # [n x S]
-        ev[:, has_e] = np.tile(ev_day.T, (n_days, 1))
-
-    return Injections(time_h, demand, pv, ev, {"demand_clusters": clusters, "n_days": n_days})
-
-
 def case_injection_pu(inj: Injections, case: str, cfg: dict) -> np.ndarray:
     """Net injection at the non-slack nodes [T x N-1], pu, generation positive."""
     streams = CASES[case]
@@ -80,3 +54,30 @@ def case_injection_pu(inj: Injections, case: str, cfg: dict) -> np.ndarray:
     if "ev" in streams:
         s -= inj.ev_kw
     return s[:, 1:] / kw_per_pu(cfg)
+
+
+def write_daily_csv(path: Path, nodes: list[str], time_h: np.ndarray, demand_kw: np.ndarray,
+                    demand_kvar: np.ndarray, pv_kw: np.ndarray, ev_kw: np.ndarray) -> None:
+    """Arrays are [T x n] in the order of `nodes`; all-zero columns are left out."""
+    cols = {"step": np.arange(len(time_h)), "hour": time_h}
+    for name, arr in zip(STREAMS, (demand_kw, demand_kvar, pv_kw, ev_kw)):
+        for j, node in enumerate(nodes):
+            if np.any(arr[:, j]):
+                cols[f"{node}:{name}"] = arr[:, j]
+    pd.DataFrame(cols).to_csv(path, index=False, float_format="%.5g")
+
+
+def read_daily_csv(path: Path, net: Network) -> Injections:
+    """The network's injections [T x N] in its internal node order (nodes not in
+    the file, e.g. pruned ones, get zero)."""
+    df = pd.read_csv(path)
+    index = {name: i for i, name in enumerate(net.node_names)}
+    T, N = len(df), net.n_nodes
+    arrays = {s: np.zeros((T, N)) for s in STREAMS}
+    for col in df.columns[2:]:
+        node, stream = col.rsplit(":", 1)
+        i = index.get(node)
+        if i is not None:
+            arrays[stream][:, i] = df[col].to_numpy(float)
+    return Injections(df["hour"].to_numpy(float), arrays["demand_kw"] + 1j * arrays["demand_kvar"],
+                      arrays["pv_kw"], arrays["ev_kw"])

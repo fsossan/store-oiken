@@ -1,0 +1,40 @@
+{
+  "name": "sc1_2030",
+  "sfoe": {
+    "key": "sc1_2030",
+    "year": 2030,
+    "description": "Scenario 1 - Reference (ZERO Base)",
+    "PV_national_MW": 9770,
+    "EV_national_thousands": 930,
+    "population_national": 9462900,
+    "population_sion_sierre": 105042
+  },
+  "time": {
+    "step_min": 15,
+    "days": 1,
+    "yearly": {
+      "enabled": true,
+      "step_min": 60
+    }
+  },
+  "demand": {
+    "demand_factor": 0.06,
+    "model_file": "data/demand_gmm.npz",
+    "seed_offset": 5675
+  },
+  "pv": {
+    "file": "data/pv/pv_profiles_year.csv",
+    "series": "clearsky",
+    "season": "all",
+    "scale": 1.0
+  },
+  "ev": {
+    "charger_kw": 11,
+    "duration_h": 4,
+    "arrival_mean_h": 18,
+    "arrival_std_h": 0.6,
+    "arrival_min_h": 17,
+    "arrival_max_h": 21,
+    "seed_offset": 1230
+  }
+}

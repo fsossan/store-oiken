@@ -142,7 +142,7 @@ def aggregate_run(run_dir: Path, main_case: str | None = None) -> Path:
     lv_map = pd.read_csv(MV_DIR / "lv_to_hvmv.csv", dtype=str).set_index("network_id")
     tab = pd.read_csv(MV_DIR / "hvmv.csv", dtype={"hvmv": str, "code": str, "name": str})
     details = run_dir / "details"
-    dt_h = run["config"]["time"]["step_min"] / 60.0
+    dt_h = (run.get("step_min") or 15) / 60.0
 
     series: dict[tuple, dict] = {}        # (hvmv, case) -> arrays
     counts: dict[tuple, dict] = {}

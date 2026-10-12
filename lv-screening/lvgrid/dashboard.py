@@ -122,6 +122,13 @@ def _load_run(run_dir: Path):
     return summary, run
 
 
+def _sfoe_label(info: dict) -> str:
+    sf = info.get("sfoe", {})
+    if isinstance(sf, dict):
+        return html.escape(f"{sf.get('key', '')} {sf.get('year', '')}: {sf.get('description', '')}".strip())
+    return html.escape(str(sf))
+
+
 # ---------------------------------------------------------- portfolio page --
 def portfolio_page(summary: pd.DataFrame, run: dict, main_case: str, pages: dict[str, str]) -> str:
     s = summary[summary["case"] == main_case].set_index("network_id")
@@ -137,10 +144,10 @@ def portfolio_page(summary: pd.DataFrame, run: dict, main_case: str, pages: dict
              + (f"Snapshot: {cfg['demand_factor']:.0%} of fuse-rated peak at every connection, "
                 f"{cfg['oneshot']['generation_factor']:.0%} of existing PV." if oneshot else
                 f"Cases: {', '.join(cases)}; metrics below for <b>{main_case}</b>. "
-                f"Scenario <b>{html.escape(str(run['scenario']))}</b> ({run['scenario_info'].get('sfoe', '')} {run['scenario_info'].get('year', '')}): "
+                f"Scenario <b>{html.escape(str(run['scenario']))}</b> ({_sfoe_label(run['scenario_info'])}): "
                 f"PV {run['scenario_info']['pv_region_kwp'] / 1e3:,.0f} MWp and {run['scenario_info']['ev_region']:,} EVs "
                 f"for Sion+Sierre ({run['scenario_info']['population_ratio']:.2%} of the national figures), "
-                f"PV day {run['scenario_info']['pv_date']}, {run['n_days']} day(s) at {cfg['time']['step_min']} min.")
+                f"PV day {run['scenario_info']['pv_date']}, {run['n_days']} day(s) at {run['step_min']} min.")
              + f" Limits: {lim['v_min_pu']}–{lim['v_max_pu']} pu, line and transformer loading ≤ {lim['line_loading_max']:.0%}.</p>"]
 
     # KPIs

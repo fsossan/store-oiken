@@ -24,6 +24,7 @@ from plotly.subplots import make_subplots
 
 from .config import DATA_DIR
 from .data import parse_ids
+from .injections import DEFAULT_STREAMS
 
 C = {"demand": "#2a78d6", "pv": "#eb6834", "ev": "#1baf7a", "net": "#52514e",
      "ok": "#0ca30c", "violation": "#d03b3b", "not_converged": "#fab219",
@@ -32,6 +33,9 @@ C = {"demand": "#2a78d6", "pv": "#eb6834", "ev": "#1baf7a", "net": "#52514e",
      "surface": "#fcfcfb", "page": "#f9f9f7"}
 BLUE_RAMP = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"]
 ORANGE_RAMP = ["#f9d3c2", "#f3a784", "#eb6834", "#b8441c"]
+EXTRA_STREAM_COLORS = ["#eda100", "#e87ba4", "#6250d6"]      # next categorical slots (yellow, magenta, violet) for new streams
+CASE_COLORS = [C["demand"], C["pv"], C["ev"], *EXTRA_STREAM_COLORS]   # by position in the run's case list
+STREAM_LABEL = {"pv": "PV", "ev": "EV"}
 STATUS_LABEL = {"ok": "✓ ok", "violation": "✗ violation", "not_converged": "! not converged",
                 "topology_error": "? topology error", "build_error": "? build error"}
 STATUS_ORDER = ["ok", "violation", "not_converged", "topology_error", "build_error"]
@@ -74,6 +78,24 @@ if (map && map.on) map.on('plotly_click', d => { const u = d.points[0].customdat
 
 
 # ------------------------------------------------------------------ helpers --
+def stream_color(name: str, streams) -> str:
+    """Fixed colour per stream (demand, PV, EV), the next categorical slots for the others in stream order."""
+    if name in ("demand", "pv", "ev"):
+        return C[name]
+    extra = [s for s in streams if s not in ("demand", "pv", "ev")]
+    return EXTRA_STREAM_COLORS[extra.index(name) % len(EXTRA_STREAM_COLORS)]
+
+
+def case_color(case: str, cases: list[str]) -> str:
+    """Fixed categorical order by position in the run's cases (the default cumulative cases demand, demand+pv,
+    demand+pv+ev, ... thereby take the colour of the stream they add)."""
+    return CASE_COLORS[cases.index(case) % len(CASE_COLORS)] if case in cases else C["demand"]
+
+
+def stream_label(name: str) -> str:
+    return STREAM_LABEL.get(name, name)
+
+
 def _page(title: str, body: str, plotly_src: str = "plotly.min.js") -> str:
     return (f"<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'>"
             f"<title>{html.escape(title)}</title><style>{CSS}</style><script src='{plotly_src}'></script></head>"
@@ -145,8 +167,9 @@ def portfolio_page(summary: pd.DataFrame, run: dict, main_case: str, pages: dict
                 f"{cfg['oneshot']['generation_factor']:.0%} of existing PV." if oneshot else
                 f"Cases: {', '.join(cases)}; metrics below for <b>{main_case}</b>. "
                 f"Scenario <b>{html.escape(str(run['scenario']))}</b> ({_sfoe_label(run['scenario_info'])}): "
-                f"PV {run['scenario_info']['pv_region_kwp'] / 1e3:,.0f} MWp and {run['scenario_info']['ev_region']:,} EVs "
-                f"for Sion+Sierre ({run['scenario_info']['population_ratio']:.2%} of the national figures), "
+                f"PV {run['scenario_info']['pv_region_kwp'] / 1e3:,.0f} MWp"
+                + (f" and {run['scenario_info']['ev_region']:,} EVs" if "ev_region" in run["scenario_info"] else "")
+                + f" for Sion+Sierre ({run['scenario_info']['population_ratio']:.2%} of the national figures), "
                 f"PV day {run['scenario_info']['pv_date']}, {run['n_days']} day(s) at {run['step_min']} min.")
              + f" Limits: {lim['v_min_pu']}–{lim['v_max_pu']} pu, line and transformer loading ≤ {lim['line_loading_max']:.0%}.</p>"]
 
@@ -160,7 +183,8 @@ def portfolio_page(summary: pd.DataFrame, run: dict, main_case: str, pages: dict
             (f"{dem.sum() / 1e3:,.1f} MW", f"nominal demand ({cfg['demand_factor']:.0%} of fuse-rated peak)"),
             (f"{s[pv_col].fillna(0).sum() / 1e3:,.1f} MWp", "existing PV" if oneshot else "scenario PV"),
             ]
-    if not oneshot:
+    has_ev = not oneshot and "ev" in (run.get("streams") or DEFAULT_STREAMS)
+    if has_ev:
         kpis.append((f"{int(s['ev_count'].fillna(0).sum()):,}", "scenario EVs"))
     kpis.append((f"{100 * dem[viol].sum() / max(dem.sum(), 1e-9):.0f} %", "of nominal demand in networks with violations"))
     parts.append("<div class='kpis'>" + "".join(f"<div class='kpi'><div class='v'>{v}</div><div class='l'>{l}</div></div>" for v, l in kpis) + "</div>")
@@ -175,11 +199,10 @@ def portfolio_page(summary: pd.DataFrame, run: dict, main_case: str, pages: dict
                           hovertemplate="%{y}: %{x} networks<extra>" + st + "</extra>")
     fig_a.update_layout(barmode="stack", bargap=0.35, title=dict(text="Network status per case", font_size=14), xaxis_title="networks")
     fig_b = go.Figure()
-    series_colors = [C["demand"], C["pv"], C["ev"]]
-    for i, c in enumerate(cases):
+    for c in cases:
         v = summary[summary["case"] == c]["violation_types"].fillna("")
         fig_b.add_bar(x=VIOLATION_KINDS, y=[int(v.str.contains(k).sum()) for k in VIOLATION_KINDS], name=c,
-                      marker_color=series_colors[i % 3], marker_line=dict(color=C["surface"], width=2),
+                      marker_color=case_color(c, cases), marker_line=dict(color=C["surface"], width=2),
                       hovertemplate="%{x}: %{y} networks<extra>" + c + "</extra>")
     fig_b.update_layout(barmode="group", bargap=0.3, title=dict(text="Networks with each violation kind", font_size=14), yaxis_title="networks")
     parts.append("<h2>Status</h2><div class='row'>" + _fig(fig_a, height=320) + _fig(fig_b, height=320) + "</div>")
@@ -247,7 +270,7 @@ def portfolio_page(summary: pd.DataFrame, run: dict, main_case: str, pages: dict
     cols = [("network_id", "network"), ("n_nodes", "nodes"), ("n_lines", "lines"), ("trafo_kva", "trafo kVA"),
             ("nominal_demand_kw", "nominal demand kW"), (pv_col, "existing PV kW" if oneshot else "PV kWp")]
     if not oneshot:
-        cols += [("ev_count", "EVs"), ("net_peak_import_kw", "peak import kW"), ("net_peak_export_kw", "peak export kW")]
+        cols += ([("ev_count", "EVs")] if has_ev else []) + [("net_peak_import_kw", "peak import kW"), ("net_peak_export_kw", "peak export kW")]
     cols += [("v_min", "min V pu"), ("line_max_loading", "max line load"), ("trafo_max_loading", "trafo load"),
              ("n_undervolt_nodes", "UV nodes"), ("n_overloaded_lines", "overloaded lines")]
     head = "".join(f"<th>{h}</th>" for _, h in cols) + "".join(f"<th>{c}</th>" for c in cases) + "<th>issues</th>"
@@ -344,6 +367,7 @@ def network_page(nid: str, det: dict, rows: pd.DataFrame, run: dict, main_case: 
     lim = cfg["limits"]
     cases = run["cases"]
     oneshot = run["mode"] == "oneshot"
+    streams = run.get("streams") or DEFAULT_STREAMS
     r = rows[rows["case"] == main_case].iloc[0]
     parts = [f"<p><a href='index.html'>← portfolio</a></p><h1>{nid}</h1>"]
     sub = f"{html.escape(str(sub_info.get('code', '')))} {html.escape(str(sub_info.get('name', '')))}".strip() if sub_info else ""
@@ -361,10 +385,10 @@ def network_page(nid: str, det: dict, rows: pd.DataFrame, run: dict, main_case: 
              ("existing PV", f"{r['existing_pv_kw']:.0f} kW")]
     if not oneshot:
         facts += [("scenario PV", f"{r['pv_kwp']:.0f} kWp = {100 * r['pv_kwp'] / max(nd, 1e-9):.0f} % of nominal demand, {100 * r['pv_kwp'] / trafo:.0f} % of the transformer"),
-                  ("scenario EVs", f"{int(r['ev_count'])} vehicles, {r['ev_peak_kw']:.0f} kW coincident peak"),
-                  ("demand peak / energy", f"{r['demand_peak_kw']:.0f} kW / {r['demand_kwh_day']:.0f} kWh per day"),
-                  ("PV peak / energy", f"{r['pv_peak_kw']:.0f} kW / {r['pv_kwh_day']:.0f} kWh per day (day {r['pv_date']})"),
-                  ("transformer peak import / export", f"{r['net_peak_import_kw']:.0f} / {r['net_peak_export_kw']:.0f} kW")]
+                  *([("scenario EVs", f"{int(r['ev_count'])} vehicles")] if "ev" in streams else [])]
+        facts += [(f"{stream_label(n)} peak / energy", f"{r[f'{n}_peak_kw']:.0f} kW / {r[f'{n}_kwh_day']:.0f} kWh per day"
+                   + (f" (day {r['pv_date']})" if n == "pv" else "")) for n in streams if f"{n}_peak_kw" in r]
+        facts += [("transformer peak import / export", f"{r['net_peak_import_kw']:.0f} / {r['net_peak_export_kw']:.0f} kW")]
     parts.append("<div class='card'><h2 style='margin-top:0'>Network</h2>" + _facts(facts) + "</div>")
 
     # case comparison
@@ -385,31 +409,32 @@ def network_page(nid: str, det: dict, rows: pd.DataFrame, run: dict, main_case: 
     if T > 1:
         t = det["time_h"]
         fig = go.Figure()
-        fig.add_scatter(x=t, y=det["demand_kw"], name="demand", line=dict(color=C["demand"], width=2), hovertemplate="%{y:.0f} kW<extra>demand</extra>")
-        fig.add_scatter(x=t, y=det["pv_kw"], name="PV", line=dict(color=C["pv"], width=2), hovertemplate="%{y:.0f} kW<extra>PV</extra>")
-        fig.add_scatter(x=t, y=det["ev_kw"], name="EV", line=dict(color=C["ev"], width=2), hovertemplate="%{y:.0f} kW<extra>EV</extra>")
+        for n in streams:
+            if f"{n}_kw" in det:
+                fig.add_scatter(x=t, y=det[f"{n}_kw"], name=stream_label(n), line=dict(color=stream_color(n, streams), width=2),
+                                hovertemplate="%{y:.0f} kW<extra>" + stream_label(n) + "</extra>")
         fig.add_scatter(x=t, y=det[f"{main_case}:slack_kw"], name=f"transformer import ({main_case}, load flow)",
                         line=dict(color=C["net"], width=2, dash="dot"), hovertemplate="%{y:.0f} kW<extra>transformer import</extra>")
         _hline(fig, trafo, f"transformer {trafo:.0f} kVA")
         _hline(fig, -trafo, "")
         xlab = "hour of day" if T == len(det["demand_kw"]) and t[-1] < 24 else "hour (consecutive days)"
-        fig.update_layout(xaxis_title=xlab, yaxis_title="3-phase kW (consumption positive)", hovermode="x unified",
+        fig.update_layout(xaxis_title=xlab, yaxis_title="3-phase kW (each stream in its own sign)", hovermode="x unified",
                           title=dict(text="Aggregate injections", font_size=14))
         parts.append("<h2>Injections</h2>" + _fig(fig, height=380))
 
         fig = make_subplots(rows=1, cols=3, subplot_titles=("Lowest node voltage [pu]", "Highest line loading [-]", "Transformer loading [-]"),
                             horizontal_spacing=0.08)
-        colors = [C["demand"], C["pv"], C["ev"]]
-        for i, c in enumerate(cases):
+        for c in cases:
             vm, ld = det[f"{c}:vmag"], det[f"{c}:loading"]
             lines = det["edge_type"] == 0
             with np.errstate(all="ignore"):
                 v = np.nanmin(vm, axis=1) if vm.size else np.full(T, np.nan)
                 lmax = np.nanmax(np.where(lines[None, :], ld, np.nan), axis=1)
                 tr = np.nanmax(ld[:, det["trafo_edges"]], axis=1)
-            fig.add_scatter(x=t, y=v, name=c, line=dict(color=colors[i % 3], width=2), legendgroup=c, row=1, col=1, hovertemplate="%{y:.3f}<extra>" + c + "</extra>")
-            fig.add_scatter(x=t, y=lmax, name=c, line=dict(color=colors[i % 3], width=2), legendgroup=c, showlegend=False, row=1, col=2, hovertemplate="%{y:.2f}<extra>" + c + "</extra>")
-            fig.add_scatter(x=t, y=tr, name=c, line=dict(color=colors[i % 3], width=2), legendgroup=c, showlegend=False, row=1, col=3, hovertemplate="%{y:.2f}<extra>" + c + "</extra>")
+            col = case_color(c, cases)
+            fig.add_scatter(x=t, y=v, name=c, line=dict(color=col, width=2), legendgroup=c, row=1, col=1, hovertemplate="%{y:.3f}<extra>" + c + "</extra>")
+            fig.add_scatter(x=t, y=lmax, name=c, line=dict(color=col, width=2), legendgroup=c, showlegend=False, row=1, col=2, hovertemplate="%{y:.2f}<extra>" + c + "</extra>")
+            fig.add_scatter(x=t, y=tr, name=c, line=dict(color=col, width=2), legendgroup=c, showlegend=False, row=1, col=3, hovertemplate="%{y:.2f}<extra>" + c + "</extra>")
         _hline(fig, lim["v_min_pu"], "limit", row=1, col=1)
         _hline(fig, lim["line_loading_max"], "limit", row=1, col=2)
         _hline(fig, lim["trafo_loading_max"], "limit", row=1, col=3)
@@ -434,14 +459,16 @@ def network_page(nid: str, det: dict, rows: pd.DataFrame, run: dict, main_case: 
     # penetration bars
     items = [("nominal demand", nd, C["demand"]), ("existing PV", float(r["existing_pv_kw"]), C["pv"])]
     if not oneshot:
-        items += [("scenario PV (kWp)", float(r["pv_kwp"]), C["pv"]), ("EV coincident peak", float(r["ev_peak_kw"]), C["ev"])]
+        items += [("scenario PV (kWp)", float(r["pv_kwp"]), C["pv"])]
+        items += [(f"{stream_label(n)} coincident peak", float(r[f"{n}_peak_kw"]), stream_color(n, streams))
+                  for n in streams if n not in ("demand", "pv") and f"{n}_peak_kw" in r]
     fig = go.Figure(go.Bar(x=[v for _, v, _ in items], y=[k for k, _, _ in items], orientation="h",
                            marker_color=[c for _, _, c in items], marker_line=dict(color=C["surface"], width=2),
                            hovertemplate="%{y}: %{x:.0f} kW<extra></extra>"))
     fig.add_vline(x=trafo, line=dict(color=C["muted"], width=1, dash="dash"), annotation_text=f"transformer {trafo:.0f} kVA", annotation_position="top")
     fig.update_layout(xaxis_title="kW", title=dict(text="Installed capacity and nominal demand vs transformer rating", font_size=14),
                       yaxis=dict(autorange="reversed"))
-    parts.append("<h2>Penetration</h2>" + _fig(fig, height=260))
+    parts.append("<h2>Penetration</h2>" + _fig(fig, height=max(260, 120 + 34 * len(items))))
     return _page(f"{nid} – screening", "".join(parts))
 
 

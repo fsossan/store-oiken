@@ -1,5 +1,5 @@
 {
-  "_comment": "Settings of the LV screening. Paths are relative to this folder; scenarios come from ../scenario-generation/output/<name>.",
+  "_comment": "Settings of the LV screening. Paths are relative to this folder; scenarios come from ../injection-scenarios/output/<name>.",
   "per_unit": {
     "Sb_VA": 100000,
     "Vb_V": 230,

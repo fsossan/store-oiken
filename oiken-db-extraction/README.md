@@ -46,7 +46,7 @@ python -c "import pyodbc; print(pyodbc.drivers())"
 
 **The database backup is not in this repository.** It is a ~3.6 GB `.bak` file,
 far over GitHub's 100 MB file limit, and it contains real utility network data —
-so it is excluded via `.gitignore` and must be transferred out of band (shared
+so it is excluded via the repository's root `.gitignore` and must be transferred out of band (shared
 drive, SFTP, or physical media). Ask the repo owner for
 `tndb_esr_test_<date>.bak`.
 
@@ -191,4 +191,4 @@ the committed `network_1_test.xlsx`.
 
 The database contains real network and customer-consumption data. Keep the
 `.bak`, any `networks/` output and customer-level exports off GitHub — the
-`.gitignore` already covers database backups, credentials and bulk outputs.
+root `.gitignore` already covers database backups, credentials and bulk outputs.

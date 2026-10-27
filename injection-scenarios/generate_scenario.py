@@ -5,6 +5,7 @@
     python generate_scenario.py generate my_case               # -> output/my_case/ (allocation, daily/, yearly/)
     python generate_scenario.py fit-demand                     # once: fit and cache the household demand model
     python generate_scenario.py clearsky --tilt 30 --year 2025 # clear-sky PV profile for a location (pvlib)
+    python generate_scenario.py dashboard                      # demand dashboard of the outputs on http://127.0.0.1:8050
 """
 from __future__ import annotations
 
@@ -31,7 +32,7 @@ def cmd_generate(a):
 
 
 def cmd_fit_demand(a):
-    from scengen.profiles import fit_demand_model, save_demand_model
+    from scengen.models.demand import fit_demand_model, save_demand_model
     cfg = load_config(a.config)
     out = resolve(cfg["demand_model"]["model_file"])
     print(f"fitting the demand model from {resolve(cfg['demand_model']['train_file'])}")
@@ -39,10 +40,15 @@ def cmd_fit_demand(a):
     print(f"-> {out}")
 
 
+def cmd_dashboard(a):
+    from scengen.dashboard import run
+    run(a.host, a.port)
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="generate_scenario.py", description="Scenario generation (SFOE PV/EV allocation and injection time series)")
     common = argparse.ArgumentParser(add_help=False)
-    common.add_argument("--config", help="settings file (default: scenario-generation/config.json)")
+    common.add_argument("--config", help="settings file (default: injection-scenarios/config.json)")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     p = sub.add_parser("new", parents=[common], help="stage 1: write scenarios/<name>/config.json from an SFOE scenario")
@@ -58,6 +64,11 @@ def main(argv=None) -> int:
 
     p = sub.add_parser("fit-demand", parents=[common], help="fit and cache the household demand model (needs the training .mat)")
     p.set_defaults(func=cmd_fit_demand)
+
+    p = sub.add_parser("dashboard", help="demand dashboard of the generated scenarios (Dash, local server, read-only)")
+    p.add_argument("--port", type=int, default=8050)
+    p.add_argument("--host", default="127.0.0.1")
+    p.set_defaults(func=cmd_dashboard)
 
     sub.add_parser("clearsky", help="clear-sky PV profile for a location (pvlib); `clearsky -h` for options", add_help=False)
 

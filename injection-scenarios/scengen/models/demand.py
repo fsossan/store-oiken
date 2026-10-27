@@ -1,4 +1,5 @@
-"""Dimensionless daily shapes: household demand (GMM), PV (representative day), EV.
+"""Household demand (stream `demand`, load): demand_factor x each node's fuse-rated power (P and Q, constant
+power factor) times a synthetic household day.
 
 Demand model (port of fit_load_gmm / sample_load_gmm, tech-selection): per
 household cluster, each house is normalised by its own maximum, the days are
@@ -14,18 +15,12 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from .config import DATA_DIR, resolve
+from ..config import DATA_DIR, resolve
+from .common import season_mask
 
-SEASON_MONTHS = {
-    "winter": (12, 1, 2), "spring": (3, 4, 5), "summer": (6, 7, 8), "autumn": (9, 10, 11), "all": tuple(range(1, 13)),
-}
-
-
-def season_mask(months: np.ndarray, season: str) -> np.ndarray:
-    return np.isin(months, SEASON_MONTHS[season])
+NAME, SIGN = "demand", "load"
 
 
-# ---------------------------------------------------------------- demand ----
 def fit_demand_model(dcfg: dict, verbose: bool = True) -> dict:
     import scipy.io as sio
     from sklearn.mixture import GaussianMixture
@@ -41,7 +36,7 @@ def fit_demand_model(dcfg: dict, verbose: bool = True) -> dict:
         days_file = DATA_DIR / "demand_train_days.csv"
         if not days_file.exists():
             raise FileNotFoundError(f"{days_file} is needed for weekday/season filters "
-                                    "(write it with scenario-generation/tools/export_demand_train_days.m)")
+                                    "(write it with injection-scenarios/tools/export_demand_train_days.m)")
         dates = pd.to_datetime(pd.read_csv(days_file)["date"])
         if len(dates) != n_days:
             raise ValueError("demand_train_days.csv does not match the training data")
@@ -133,62 +128,26 @@ def sample_demand(model: dict, n_nodes: int, days, seed: int):
     return shape, clusters
 
 
-# -------------------------------------------------------------------- PV ----
-def load_pv_year(path: Path) -> pd.DataFrame:
-    """The yearly PV profile CSV (a '#' JSON header line is skipped)."""
-    df = pd.read_csv(path, comment="#")
-    offsets = df["time"].str[-5:].unique()
-    if len(offsets) != 1:
-        raise ValueError(f"{path}: timestamps must share one fixed UTC offset (found {list(offsets)}); "
-                         "days are cut by position, daylight-saving shifts would misalign them")
-    df["time"] = pd.to_datetime(df["time"], utc=True).dt.tz_convert("Etc/GMT-1")
-    return df
+# ------------------------------------------------------------- interface ----
+def allocate(nodes: pd.DataFrame, sfoe: dict, cfg: dict) -> dict:
+    """Nothing to allocate: demand scales with each node's fuse rating."""
+    return {}
 
 
-def pv_year_series(pv_year: pd.DataFrame, series: str, step_min: int) -> np.ndarray:
-    """The normalised yearly PV series [n_days x S]."""
-    S = 24 * 60 // step_min
-    col = f"pv_norm_{series}"
-    if col not in pv_year:
-        raise KeyError(f"no column {col} in the PV profile file")
-    y = pv_year[col].to_numpy(float)
-    if len(y) % S:
-        raise ValueError(f"PV profile has {len(y)} samples, not a whole number of {S}-step days")
-    return y.reshape(-1, S)
+def prepare(cfg: dict, step_min: int) -> dict:
+    model = load_demand_model(resolve(cfg["model_file"]))
+    if int(model["steps_per_day"]) != 24 * 60 // step_min:
+        raise ValueError("demand model resolution differs from time.step_min")
+    return {"cfg": cfg, "model": model}
 
 
-def pv_representative_day(pv_year: pd.DataFrame, series: str, season: str, step_min: int):
-    """Normalised PV of the real day closest (RMSE) to the mean shape of the season.
-
-    Returns (profile [S], date string, day index)."""
-    S = 24 * 60 // step_min
-    days = pv_year_series(pv_year, series, step_min)
-    months = pv_year["time"].dt.month.to_numpy()[::S]
-    cand = np.flatnonzero(season_mask(months, season))
-    mean_day = days[cand].mean(axis=0)
-    k = cand[np.argmin(np.sqrt(((days[cand] - mean_day) ** 2).mean(axis=1)))]
-    date = str(pv_year["time"].iloc[k * S].date())
-    return days[k], date, int(k)
-
-
-# -------------------------------------------------------------------- EV ----
-def ev_node_profiles(ev_counts: np.ndarray, ecfg: dict, step_min: int, rng: np.random.Generator) -> np.ndarray:
-    """Charging power per node [n x S], 3-phase kW: each vehicle charges at
-    charger_kw for duration_h after a truncated-normal arrival time."""
-    S = 24 * 60 // step_min
-    t = np.arange(S) * step_min / 60.0
-    counts = np.asarray(ev_counts, int)
-    out = np.zeros((len(counts), S))
-    total = int(counts.sum())
-    if total == 0:
-        return out
-    lo, hi = ecfg["arrival_min_h"], ecfg["arrival_max_h"]
-    arrivals = []
-    while len(arrivals) < total:
-        a = rng.normal(ecfg["arrival_mean_h"], ecfg["arrival_std_h"], size=2 * total)
-        arrivals.extend(a[(a >= lo) & (a <= hi)].tolist())
-    arrivals = np.array(arrivals[:total])
-    on = (t[None, :] >= arrivals[:, None]) & (t[None, :] < arrivals[:, None] + ecfg["duration_h"])
-    owner = np.repeat(np.arange(len(counts)), counts)
-    np.add.at(out, owner, on * ecfg["charger_kw"])
-    return out
+def series(state: dict, rows: pd.DataFrame, days: list[int], net_num: int) -> dict[str, np.ndarray]:
+    cfg = state["cfg"]
+    # TODO: demand too low. The 6 % is already a coincident planning value but is used here as each household's own
+    # max, and independent sampling diversifies again: 1,550 kWh/yr and ~1 % of fuse power at the network peak for a
+    # 40 A connection. Scale per node on metered energy instead (ceiling = kWh/yr / (8760 x 0.118 mean shape)), from
+    # coffretIntroduction_COF.clientConsommationAnnuelCompteur_COF in the .bak (parse it like data/tools/extract_nodes_from_bak.py).
+    nominal = cfg["demand_factor"] * (rows["plmax_kw"].to_numpy() + 1j * rows["qlmax_kvar"].to_numpy())
+    shape, _ = sample_demand(state["model"], len(rows), days, net_num + cfg["seed_offset"])     # [n x D x S]
+    demand = shape * nominal[:, None, None]
+    return {"demand_kw": demand.real, "demand_kvar": demand.imag}

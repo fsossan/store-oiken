@@ -108,8 +108,8 @@ main                                                      % MILP on LV_Grid_101
 - Terminology: a *profile* is a dimensionless shape; *injections* are the
   per-node power series the load flow consumes.
 - `experiments/` is tracked again (code + write-ups only; outputs live under
-  `results/experiments/`). Add `experiments/` back to `.gitignore` if you want
-  it local-only. `experiments/archive/` stays ignored.
+  `results/experiments/`). Add `tech-selection/experiments/` back to the root
+  `.gitignore` if you want it local-only. `experiments/archive/` stays ignored.
 - The portfolio list (`data/derived/violation_ids_sc1_2040.mat`) has no
   generator in the repo; `load_ess_selection_context` falls back to it with a
   warning for other scenarios. Stage 2 will regenerate it per scenario.

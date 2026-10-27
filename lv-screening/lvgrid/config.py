@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parent.parent          # lv-screening/
 CONFIG_FILE = ROOT / "config.json"
 DATA_DIR = ROOT.parent / "data"                        # shared inputs of the repo
 RESULTS_DIR = ROOT / "results"
-SCENARIO_OUTPUT = ROOT.parent / "scenario-generation" / "output"   # generated scenarios
+SCENARIO_OUTPUT = ROOT.parent / "injection-scenarios" / "output"   # generated scenarios
 
 
 def load_config(path: Path | str | None = None) -> dict:

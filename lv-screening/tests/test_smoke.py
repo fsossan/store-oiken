@@ -66,7 +66,9 @@ def test_scenario_injections(portfolio, cfg, test_scenario_folder):
     sc.apply(net)
     assert abs(net.pv_kwp.sum() - 85.0247) < 0.01 and net.ev_count.sum() == 8
     inj = sc.injections(net)
-    assert inj.demand_kw.shape == (192, 78) and inj.time_h[-1] == 47.75 and inj.pv_kw.max() > 0 and inj.ev_kw.sum() > 0
+    assert list(inj.streams) == ["demand", "pv", "ev"] and sc.default_cases() == ["demand", "demand+pv", "demand+pv+ev"]
+    assert inj.streams["demand"].shape == (192, 78) and inj.time_h[-1] == 47.75
+    assert inj.streams["pv"].real.max() > 0 and inj.streams["ev"].real.sum() > 0 and inj.streams["demand"].imag.max() > 0
     assert not sc.provenance()["allocation_edited_after_generation"]
 
 
@@ -89,3 +91,15 @@ def test_runs_and_outputs(portfolio, cfg, test_scenario_folder, tmp_path):
 def test_empty_selection_rejected(portfolio, cfg, tmp_path):
     with pytest.raises(ValueError):
         run(portfolio, cfg, [], out_dir=tmp_path / "x", verbose=False)
+
+
+def test_stream_and_case_checks():
+    from lvgrid.injections import check_cases, check_streams, default_cases
+    signs = {"demand": "load", "pv": "generation", "ev": "load", "heat_pump": "load"}
+    assert default_cases(signs)[-1] == "demand+pv+ev+heat_pump"
+    check_cases(["demand+heat_pump", "pv"], signs)
+    for bad in (["demand+demand"], ["demand+heat"]):
+        with pytest.raises(KeyError):
+            check_cases(bad, signs)
+    with pytest.raises(ValueError):
+        check_streams({"demand": "load", "pv": "gen"})

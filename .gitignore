@@ -1,26 +1,111 @@
-# Backups of the three sub-projects' original .git folders (moved on 2026-10-10
-# so that this repository can track their files; move back to restore them),
-# and the pre-restructure MATLAB outputs (862 MB).
-obsolete/nested-git/
-obsolete/tech-selection-legacy-output/
+# The only .gitignore of the OIKEN LV grid study; it covers the whole tree.
+# Paths are given from the repository root, so a sub-project that is split
+# out again as its own repository (see README "History") needs its own file.
 
-# OS / editor
-.DS_Store
-._*
-*.asv
-.venv/
+# ---------------------------------------------------------------------------
+# Raw inputs too large for git (provenance in the README of each folder)
+# ---------------------------------------------------------------------------
+# SQL Server backup of the DSO database (3.9 GB, real customer data) and
+# any other database dump or local database file
+*.bak
+*.bacpac
+*.mdf
+*.ldf
+*.ndf
+*.trn
+*.dmp
+*.dump
+*.sqlite
+*.sqlite3
+*.db
+# Demand training set (163 MB) and its duplicate in the obsolete MATLAB stage
+tech-selection/data/external/
+obsolete/sanity_check/util/load_consumption_train_heapo.mat
+
+# ---------------------------------------------------------------------------
+# Generated outputs (regenerate with the commands given in each README)
+# ---------------------------------------------------------------------------
+# Stage 1: injection series per scenario, and scenarios created by the tests
+injection-scenarios/output/
+injection-scenarios/scenarios/_test_*/
+# Stage 2: screening results and dashboards
+lv-screening/results/
+# Stage 3: MILP runs, reports (hundreds of MB per experiment) and local scratch
+tech-selection/results/
+tech-selection/experiments/archive/
+# DB extraction: one .xlsx per substation (~1300 files, real network data)
+oiken-db-extraction/networks/
+# Superseded MATLAB outputs (862 MB) and the MkDocs build of the old website
+obsolete/tech-selection-legacy-output/
+obsolete/sanity_check/output/scenario*/
+obsolete/sanity_check/sanity-check-website/site/
+obsolete/sanity_check/sanity-check-website/docs/figures/
+obsolete/sanity_check/sanity-check-website/docs/scenario*/
+
+# ---------------------------------------------------------------------------
+# Original .git folders of the three sub-projects (2.3 GB, moved here on
+# 2026-10-10; move one back to restore that folder as its own repository)
+# ---------------------------------------------------------------------------
+obsolete/nested-git/
+
+# ---------------------------------------------------------------------------
+# Credentials (database connection settings must never be committed)
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets.*
+connection_string.txt
+
+# ---------------------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------------------
 __pycache__/
 *.py[cod]
-.claude/
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# ---------------------------------------------------------------------------
+# MATLAB
+# ---------------------------------------------------------------------------
+*.asv
+*.m~
+*.autosave
+*.mex*
+slprj/
+# Windows artefact once created by a redirect in a MATLAB script
+nul
+
+# ---------------------------------------------------------------------------
+# Editors, OS, AI assistants
+# ---------------------------------------------------------------------------
+.DS_Store
+._*
+__MACOSX/
+Thumbs.db
+desktop.ini
+# Excel lock files, editor backups and swap files
+~$*
+*~
+*.swp
+*.log
 .vscode/
+.idea/
+.claude/
 
-# Database backup (3.9 GB, real customer data)
-*.bak
-
-# Outputs of the Python tools (regenerate with their commands)
-lv-screening/results/
-scenario-generation/output/
-scenario-generation/scenarios/_test_*/
-
-# Duplicate of tech-selection/data/external/load_consumption_train_heapo.mat (163 MB)
-obsolete/sanity_check/util/load_consumption_train_heapo.mat
+# ---------------------------------------------------------------------------
+# Archives and bulky interchange formats (the small CSV samples are tracked)
+# ---------------------------------------------------------------------------
+*.zip
+*.7z
+*.tar.gz
+*.parquet
+*.feather

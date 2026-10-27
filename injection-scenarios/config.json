@@ -36,12 +36,10 @@
       "scale": 1.0
     },
     "ev": {
+      "_comment": "Every vehicle charges once a day at charger_kw from its arrival until its energy is delivered (cut at midnight). arrival_h [h] and energy_kwh [kWh] are truncated to [min, max] and are either {dist: normal, mean, std} (std 0 = fixed value) or {dist: gev, shape, loc, scale}; GEV shape = xi (> 0 heavy upper tail, 0 Gumbel), as k in MATLAB gevrnd (scipy genextreme c = -xi). Defaults = the former fixed 4 h x 11 kW sessions.",
       "charger_kw": 11,
-      "duration_h": 4,
-      "arrival_mean_h": 18,
-      "arrival_std_h": 0.6,
-      "arrival_min_h": 17,
-      "arrival_max_h": 21,
+      "arrival_h": {"dist": "normal", "mean": 18, "std": 0.6, "min": 17, "max": 21},
+      "energy_kwh": {"dist": "normal", "mean": 44, "std": 0, "min": 0, "max": 100},
       "seed_offset": 1230
     }
   },

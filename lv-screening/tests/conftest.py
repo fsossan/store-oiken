@@ -1,5 +1,5 @@
 """A small generated scenario for the screening tests, made with the sibling
-scenario-generation tool (3 networks, 2 days), removed afterwards."""
+injection-scenarios tool (3 networks, 2 days), removed afterwards."""
 import shutil
 import sys
 import warnings
@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-GEN = Path(__file__).resolve().parents[2] / "scenario-generation"
+GEN = Path(__file__).resolve().parents[2] / "injection-scenarios"
 sys.path.insert(0, str(GEN))
 warnings.filterwarnings("ignore")
 NAME = "_test_screening"

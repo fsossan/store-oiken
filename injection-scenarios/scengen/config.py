@@ -1,10 +1,10 @@
-"""Paths and settings. Everything is relative to the scenario-generation folder."""
+"""Paths and settings. Everything is relative to the injection-scenarios folder."""
 from __future__ import annotations
 
 import json
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent          # scenario-generation/
+ROOT = Path(__file__).resolve().parent.parent          # injection-scenarios/
 DATA_DIR = ROOT.parent / "data"                        # shared inputs of the repo
 SCENARIOS_DIR = ROOT / "scenarios"                     # configurations (tracked)
 OUTPUT_DIR = ROOT / "output"                           # generated injections (ignored)

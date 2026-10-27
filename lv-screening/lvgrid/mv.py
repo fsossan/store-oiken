@@ -21,6 +21,7 @@ import pandas as pd
 
 from .config import DATA_DIR
 from .data import Portfolio
+from .injections import DEFAULT_STREAMS
 
 MV_DIR = DATA_DIR / "mv"
 STR = {"from": str, "to": str, "object": str, "mv_grid": str, "station": str, "hvmv": str, "network_id": str}
@@ -143,6 +144,7 @@ def aggregate_run(run_dir: Path, main_case: str | None = None) -> Path:
     tab = pd.read_csv(MV_DIR / "hvmv.csv", dtype={"hvmv": str, "code": str, "name": str})
     details = run_dir / "details"
     dt_h = (run.get("step_min") or 15) / 60.0
+    streams = run.get("streams") or DEFAULT_STREAMS                  # name -> 'load' | 'generation'
 
     series: dict[tuple, dict] = {}        # (hvmv, case) -> arrays
     counts: dict[tuple, dict] = {}
@@ -157,28 +159,25 @@ def aggregate_run(run_dir: Path, main_case: str | None = None) -> Path:
             det = {k: z[k] for k in z.files}
         r = g.iloc[0]
         if "demand_kw" in det:
-            demand, pv, ev = det["demand_kw"], det["pv_kw"], det["ev_kw"]
+            x = {name: det[f"{name}_kw"] for name in streams}
         else:                                                        # one-shot: constant snapshot
-            demand = np.array([r["nominal_demand_kw"]])
-            pv = np.array([r.get("pv_kw", 0.0)])
-            ev = np.zeros(1)
+            x = {name: np.zeros(1) for name in streams}
+            x.update(demand=np.array([r["nominal_demand_kw"]]), pv=np.array([r.get("pv_kw", 0.0)]))
         for c in cases:
             key = (h, c)
-            s = series.setdefault(key, {"demand_kw": 0.0, "pv_kw": 0.0, "ev_kw": 0.0, "import_kw": 0.0, "missing_steps": 0})
+            s = series.setdefault(key, {**{f"{name}_kw": 0.0 for name in streams}, "import_kw": 0.0, "missing_steps": 0})
             cnt = counts.setdefault(key, {"n_networks": 0, "nominal_demand_kw": 0.0, "pv_kwp": 0.0, "ev_count": 0})
-            use_ev = c == "demand+pv+ev"
-            d = demand
-            p = pv if (c in ("demand+pv", "demand+pv+ev", "oneshot")) else np.zeros_like(demand)
-            e = ev if use_ev else np.zeros_like(demand)
+            inc = list(streams) if c == "oneshot" else c.split("+")
+            v = {name: x[name] if name in inc else np.zeros_like(x["demand"]) for name in streams}
+            imp = (sum((v[n] for n in streams if streams[n] == "load"), 0.0)
+                   - sum((v[n] for n in streams if streams[n] == "generation"), 0.0))   # injections seen by the transformer
             slack = det.get(f"{c}:slack_kw")
-            imp = d + e - p                                            # injections seen by the transformer
             if slack is not None:
                 ok = np.isfinite(slack)
                 imp = np.where(ok, slack, imp)                         # load-flow import where it converged
                 s["missing_steps"] += int((~ok).sum())
-            s["demand_kw"] = s["demand_kw"] + d
-            s["pv_kw"] = s["pv_kw"] + p
-            s["ev_kw"] = s["ev_kw"] + e
+            for name in streams:
+                s[f"{name}_kw"] = s[f"{name}_kw"] + v[name]
             s["import_kw"] = s["import_kw"] + imp
             cnt["n_networks"] += 1
             cnt["nominal_demand_kw"] += float(r["nominal_demand_kw"])
@@ -190,13 +189,14 @@ def aggregate_run(run_dir: Path, main_case: str | None = None) -> Path:
     mva = dict(zip(tab["hvmv"], tab["mva"]))
     long_rows, sum_rows = [], []
     for (h, c), s in sorted(series.items()):
-        d, p, e, imp = (np.atleast_1d(np.asarray(s[k], float)) for k in ("demand_kw", "pv_kw", "ev_kw", "import_kw"))
+        x = {name: np.atleast_1d(np.asarray(s[f"{name}_kw"], float)) for name in streams}
+        imp = np.atleast_1d(np.asarray(s["import_kw"], float))
+        d = x["demand"]
         for k in range(len(d)):
-            long_rows.append({"hvmv": h, "case": c, "step": k, "hour": t_h[k], "demand_kw": d[k], "pv_kw": p[k], "ev_kw": e[k], "import_kw": imp[k]})
+            long_rows.append({"hvmv": h, "case": c, "step": k, "hour": t_h[k], **{f"{n}_kw": x[n][k] for n in streams}, "import_kw": imp[k]})
         cnt = counts[(h, c)]
         mv = mva.get(h, np.nan)
-        sum_rows.append({"hvmv": h, "case": c, **cnt, "hvmv_mva": mv,
-                         "demand_peak_kw": float(d.max()), "pv_peak_kw": float(p.max()), "ev_peak_kw": float(e.max()),
+        sum_rows.append({"hvmv": h, "case": c, **cnt, "hvmv_mva": mv, **{f"{n}_peak_kw": float(x[n].max()) for n in streams},
                          "import_peak_kw": float(max(imp.max(), 0)), "export_peak_kw": float(max(-imp.min(), 0)),
                          "import_kwh_day": float(np.clip(imp, 0, None).sum() * dt_h / run.get("n_days", 1)) if len(d) > 1 else np.nan,
                          "export_kwh_day": float(np.clip(-imp, 0, None).sum() * dt_h / run.get("n_days", 1)) if len(d) > 1 else np.nan,
@@ -207,13 +207,14 @@ def aggregate_run(run_dir: Path, main_case: str | None = None) -> Path:
     long_df.to_csv(run_dir / "aggregate_hvmv_series.csv", index=False, float_format="%.6g")
     sum_df.to_csv(run_dir / "aggregate_hvmv.csv", index=False, float_format="%.6g")
     if T > 1:
-        _aggregate_page(run_dir, long_df, sum_df, tab, main_case or cases[-1])
+        _aggregate_page(run_dir, long_df, sum_df, tab, main_case or cases[-1], streams)
     return run_dir / "aggregate_hvmv.csv"
 
 
-def _aggregate_page(run_dir: Path, long_df: pd.DataFrame, sum_df: pd.DataFrame, tab: pd.DataFrame, case: str) -> None:
+def _aggregate_page(run_dir: Path, long_df: pd.DataFrame, sum_df: pd.DataFrame, tab: pd.DataFrame, case: str,
+                    streams: dict[str, str]) -> None:
     from plotly.subplots import make_subplots
-    from .dashboard import C, _fig, _page
+    from .dashboard import C, _fig, _page, stream_color, stream_label
 
     s = long_df[long_df["case"] == case]
     ids = [h for h in tab["hvmv"] if h in set(s["hvmv"])] + (["unmapped"] if "unmapped" in set(s["hvmv"]) else [])
@@ -226,9 +227,9 @@ def _aggregate_page(run_dir: Path, long_df: pd.DataFrame, sum_df: pd.DataFrame, 
         r, c = divmod(i, cols)
         g = s[s["hvmv"] == h]
         show = i == 0
-        fig.add_scatter(x=g["hour"], y=g["demand_kw"] / 1e3, name="demand", line=dict(color=C["demand"], width=2), showlegend=show, legendgroup="d", row=r + 1, col=c + 1)
-        fig.add_scatter(x=g["hour"], y=g["pv_kw"] / 1e3, name="PV", line=dict(color=C["pv"], width=2), showlegend=show, legendgroup="p", row=r + 1, col=c + 1)
-        fig.add_scatter(x=g["hour"], y=g["ev_kw"] / 1e3, name="EV", line=dict(color=C["ev"], width=2), showlegend=show, legendgroup="e", row=r + 1, col=c + 1)
+        for name in streams:
+            fig.add_scatter(x=g["hour"], y=g[f"{name}_kw"] / 1e3, name=stream_label(name), line=dict(color=stream_color(name, streams), width=2),
+                            showlegend=show, legendgroup=name, row=r + 1, col=c + 1)
         fig.add_scatter(x=g["hour"], y=g["import_kw"] / 1e3, name="import at the LV transformers", line=dict(color=C["net"], width=2, dash="dot"), showlegend=show, legendgroup="i", row=r + 1, col=c + 1)
         mva = dict(zip(tab["hvmv"], tab["mva"])).get(h)
         if mva:

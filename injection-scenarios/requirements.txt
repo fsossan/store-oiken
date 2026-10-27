@@ -1,0 +1,7 @@
+numpy>=1.26
+scipy>=1.11            # reading the .mat training data, EV distributions
+pandas>=2.1
+scikit-learn>=1.3      # fitting the demand model only
+pvlib>=0.10            # clear-sky PV profiles only
+plotly>=5.18           # dashboard only
+dash>=2.16,<4          # dashboard only (dash_table.DataTable leaves the core in Dash 4)

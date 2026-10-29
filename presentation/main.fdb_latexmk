@@ -1,5 +1,5 @@
 # Fdb version 4
-["pdflatex"] 1793223164.70521 "main.tex" "main.pdf" "main" 1793223166.1473 0
+["pdflatex"] 1793264270.32475 "main.tex" "main.pdf" "main" 1793264271.81474 0
   "/Users/fabrizio/Library/texmf/tex/latex/gridlab/gridlab/beamerthemegridlab.sty" 1789310512.38022 20151 5a6d7dea02ed1141dde96ae30c4db82b ""
   "/Users/fabrizio/Library/texmf/tex/latex/gridlab/gridlab/logo_gridlab.png" 1788125428.39789 103791 63080a4c4b07c21d6caca7be91d2179c ""
   "/Users/fabrizio/Library/texmf/tex/latex/gridlab/gridlab/logo_hesso.png" 1788125428.39808 59732 333734667acc1dc1b2211fa07a909eb3 ""
@@ -42,6 +42,7 @@
   "/usr/local/texlive/2025/texmf-dist/fonts/tfm/public/lm/rm-lmr7.tfm" 1254269338 11852 5a9022f105fd1ee2797df861e79ae9a0 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/tfm/public/lm/rm-lmr8.tfm" 1254269338 11864 309fd7f43e4a0ba39f6f7644d76e8edf ""
   "/usr/local/texlive/2025/texmf-dist/fonts/tfm/public/lm/rm-lmr9.tfm" 1254269338 11884 c93929a6974dce79eabb778f219d7e18 ""
+  "/usr/local/texlive/2025/texmf-dist/fonts/tfm/public/lm/ts1-lmss10.tfm" 1254269338 1576 dc39c0165a09a2dd2c8da4cbb869c2e7 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/tfm/public/lm/ts1-lmss8.tfm" 1254269338 1604 48051ef252c0ddf583dd76f1a193d4ae ""
   "/usr/local/texlive/2025/texmf-dist/fonts/tfm/public/lm/ts1-lmss9.tfm" 1254269338 1604 83d0fca6162270f4baaaed5c8d49be12 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/tfm/public/lm/ts1-lmssbx10.tfm" 1254269338 1600 fe5e7104e884b3b32f9b4672f86d8a64 ""
@@ -304,12 +305,12 @@
   "/usr/local/texlive/2025/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1769166922 5467155 19efa205003f9ecad95fbbaa6ff24da1 ""
   "/usr/local/texlive/2025/texmf-var/web2c/pdftex/pdflatex.fmt" 1769166916 3345739 2c5f849803481aec6bd26faa30ec47dd ""
   "/usr/local/texlive/2025/texmf.cnf" 1741450484 577 418a7058ec8e006d8704f60ecd22c938 ""
-  "main.aux" 1793223166.06399 4463 40e35b45cce9771e7db12330c18fef47 "pdflatex"
-  "main.nav" 1793223166.06496 2548 92ce32d503828f429450c472ecbdaf08 "pdflatex"
-  "main.out" 1793223166.06466 951 4f5566f5f62fd03a2f8a96be8aadc53b "pdflatex"
-  "main.tex" 1793223163.80603 16804 ab456d6a66b65f38d574feacb5d89c5a ""
-  "main.toc" 1793223166.065 291 73029149ea0ac4ba0bd9b2f4c7553f2c "pdflatex"
-  "main.vrb" 1793223165.93137 1897 4d422e3889488b1d6a38d11dd245a700 "pdflatex"
+  "main.aux" 1793264271.73186 4591 4e40fb410ee08faf9a1ad9d701022df0 "pdflatex"
+  "main.nav" 1793264271.73367 2640 128f10e040002f9d7971aab5661d20b1 "pdflatex"
+  "main.out" 1793264271.73347 951 4f5566f5f62fd03a2f8a96be8aadc53b "pdflatex"
+  "main.tex" 1793264267.82348 19929 57c170a186e28bbb691262ea370484e5 ""
+  "main.toc" 1793264271.73372 291 6ffd4b5425720a4697cb83bb1fd96319 "pdflatex"
+  "main.vrb" 1793264271.57588 2435 f4e3691bbc066458d9ccdf86532f5cc9 "pdflatex"
   (generated)
   "main.aux"
   "main.log"

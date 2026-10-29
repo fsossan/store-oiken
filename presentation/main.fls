@@ -563,6 +563,11 @@ OUTPUT main.vrb
 INPUT ./main.vrb
 INPUT ./main.vrb
 INPUT main.vrb
+INPUT /usr/local/texlive/2025/texmf-dist/fonts/tfm/public/lm/ts1-lmss10.tfm
+OUTPUT main.vrb
+INPUT ./main.vrb
+INPUT ./main.vrb
+INPUT main.vrb
 INPUT /usr/local/texlive/2025/texmf-dist/fonts/tfm/public/lm/ts1-lmssbx10.tfm
 INPUT /usr/local/texlive/2025/texmf-dist/tex/latex/lm/t1lmtt.fd
 INPUT /usr/local/texlive/2025/texmf-dist/tex/latex/lm/t1lmtt.fd

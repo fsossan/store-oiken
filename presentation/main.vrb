@@ -1,0 +1,42 @@
+\frametitle{Premiers éléments de réponse : pas encore partout}
+\begin{columns}[c,onlytextwidth]
+    \begin{column}{0.52\textwidth}
+      \centering
+      {\small\textbf{Réseaux BT en dépassement en 2040, par type}\\
+       \footnotesize\color{subtle}ordres de grandeur}\par
+      \vspace{0.4em}
+      \shorthandoff{;:!?}% pgfplots lit le ; final avant que babel le rende
+      \begin{tikzpicture}
+        \begin{axis}[
+            xbar, scale only axis, width=2.9cm, height=3.4cm,
+            bar width=11pt, enlarge y limits=0.2,
+            xmin=0, xmax=220, clip=false, hide x axis,
+            axis y line*=left, y axis line style={draw=subtle},
+            ytick=data, symbolic y coords={over,under,trafo,line},
+            yticklabels={Surtension, Sous-tension, Transformateur surchargé,
+                         Ligne surchargée},
+            yticklabel style={font=\footnotesize, text=ink},
+            major tick length=0pt,
+            nodes near coords={\pgfmathprintnumber[assume math mode=true]{\pgfplotspointmeta}},
+            nodes near coords style={font=\footnotesize, text=ink},
+          ]
+          \addplot[fill=primary, draw=none]
+            coordinates {(40,over) (160,under) (190,trafo) (220,line)};
+        \end{axis}
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.44\textwidth}
+      \kpi[4.8cm]{3 sur 10}{réseaux BT dépassent au moins une limite dans le
+        scénario Référence 2040 (environ 300 sur 1036)}
+
+      \vspace{0.8em}
+      Un réseau peut cumuler plusieurs types de dépassement.
+    \end{column}
+  \end{columns}
+
+  \vspace{0.8em}
+  {\footnotesize\color{subtle} Scénario-cadre, scénario Référence (ZERO Base)
+  ramené à Sion et Sierre au prorata de la population ; journée
+  représentative au pas de 15 min. Ordres
+  de grandeur : les comptes varient avec le tirage aléatoire de la demande et
+  des arrivées de VE.}

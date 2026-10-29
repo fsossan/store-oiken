@@ -108,14 +108,28 @@ def test_generated_files(generated):
 
 
 def test_dashboard(generated):
-    from scengen.dashboard import kpis, load_output, make_app, network_facts, network_figures, output_status, portfolio_figures
-    assert output_status(NAME)[0] == "ok"
-    d = load_output(NAME)
-    assert len(d["nets"]) == 3 and d["Y"].shape == (3, 8760) and (d["nets"]["peak_pct_fuse"] < 6.01).all()
-    assert len(kpis(d)) == 7 and set(portfolio_figures(d)) == {"scatter", "hist", "day", "heat", "duration"}
-    figs, note = network_figures(d, "LV_Grid_101")
-    assert set(figs) == {"nodes", "heat", "duration"} and "coincidence factor" in note and network_facts(d, "LV_Grid_101")
-    make_app()
+    from scengen import dashboard as db
+    assert db.output_status(NAME)[0] == "ok"
+    d = db.load_output(NAME)
+    ceiling = 100 * load_config()["scenario_defaults"]["demand"]["demand_factor"]
+    assert len(d["nets"]) == 3 and set(d["Y"]) == {"demand", "pv", "ev"} and d["Y"]["pv"].shape == (3, 8760)
+    assert (d["nets"]["demand_peak_pct_fuse"] < ceiling + 0.01).all()
+    net = d["Y"]["demand"] + d["Y"]["ev"] - d["Y"]["pv"]
+    assert np.allclose(d["nets"]["net_peak_kw"], net.max(axis=1)) and np.allclose(d["nets"]["net_min_kw"], net.min(axis=1))
+    s = db.summary(d)
+    assert np.isclose(s["gwh_net"][1], s["gwh_demand"][1] + s["gwh_ev"][1] - s["gwh_pv"][1])
+    assert len(db.kpis(d)) == 8 and set(db.overview_figures(d)) == {"year", "month", "duration", "heat"}
+    for which in db.DAYS:
+        assert len(db.regional_day(d, which, d).data) == 5                  # 3 streams, net load, the other scenario's net load
+        assert len(db.network_day(d, "LV_Grid_101", which).data) == 4
+    fig, note = db.connections_figure(d, "LV_Grid_101", "pv")
+    assert "coincidence factor" in note and db.network_facts(d, "LV_Grid_101")
+    assert set(db.network_year_figures(d, "LV_Grid_101", d)) == {"year", "duration", "heat"}
+    for m in db.METRICS:
+        db.scatter_figure(d, m, "import_pct_trafo")
+        db.shift_figure(d, d, m)
+    assert all(r[1] == r[2] and r[3].startswith("0") for r in db.compare_rows(d, d))
+    db.make_app()
 
 
 def test_config_checks():
@@ -135,7 +149,7 @@ def test_config_checks():
 
 def test_subset_without_yearly():
     """A rerun leaves only its own networks; the dashboard works without yearly files."""
-    from scengen.dashboard import kpis, load_output, network_figures
+    from scengen.dashboard import connections_figure, kpis, load_output, network_day, network_year_figures
     name = "_test_subset"
     try:
         scfg = new_scenario_config(load_config(), "sc1_2030", name)
@@ -145,9 +159,9 @@ def test_subset_without_yearly():
         folder = generate(name, ["LV_Grid_230"], verbose=False)
         assert [f.stem for f in (folder / "daily").glob("*.csv")] == ["LV_Grid_230"]
         d = load_output(name)
-        assert list(d["nets"].index) == ["LV_Grid_230"] and d["Y"] is None and kpis(d)[0][1] == "connections in 1 networks"
-        figs, _ = network_figures(d, "LV_Grid_230")
-        assert set(figs) == {"nodes", "heat", "duration"}
+        assert list(d["nets"].index) == ["LV_Grid_230"] and d["Y"] is None and kpis(d)[0][2] == "in 1 networks"
+        assert len(network_day(d, "LV_Grid_230", "rep").data) == 4 and connections_figure(d, "LV_Grid_230", "demand")[1]
+        assert set(network_year_figures(d, "LV_Grid_230")) == {"year", "duration", "heat"}
     finally:
         for d in (SCENARIOS_DIR / name, OUTPUT_DIR / name):
             shutil.rmtree(d, ignore_errors=True)

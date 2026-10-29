@@ -7,9 +7,10 @@ coordinates and the HV/MV substation view. It replaces the MATLAB stages 4–7
 of `../obsolete/sanity_check` and the stage-1 report of `../tech-selection`;
 the storage MILP stays in MATLAB. Inputs come from the shared `../data/`.
 
-No server, no database: pure numpy/pandas, one results folder per run, static
-HTML pages. The whole portfolio runs in 8 s (one-shot) or 30 s (three cases of
-a scenario) on a laptop.
+No database: pure numpy/pandas, one results folder per run, static HTML
+pages. The whole portfolio runs in 8 s (one-shot) or 30 s (three cases of a
+scenario) on a laptop. The one local server is the optional grid data
+explorer (`explore`, Dash), which shows what the export holds before any run.
 
 ## Setup
 
@@ -26,6 +27,7 @@ tables); see `../data/README.md`. Scenarios are generated in
 ## Commands
 
 ```bash
+python3 -m lvgrid explore                              # grid data explorer on http://127.0.0.1:8051 (Dash, read-only, 4 s to start)
 python3 -m lvgrid oneshot                              # sanity check of every network -> results/<stamp>_oneshot/
 python3 -m lvgrid screen --scenario sc1_2040           # screening with ../injection-scenarios/output/sc1_2040, 3 cases, 25 s
 python3 -m lvgrid screen --scenario sc1_2040 --networks @results/<oneshot run>   # only networks that passed the sanity check
@@ -133,6 +135,40 @@ per-case envelopes of voltage, line and transformer loading over the day, and
 installed capacity vs transformer rating. Map tiles need internet access;
 everything else is local.
 
+## Grid data explorer (`explore`)
+
+A local Dash app (`lvgrid/explorer.py`) on what `../data/` holds, before any
+scenario or run: `python3 -m lvgrid explore` builds every network once (about
+4 s) and serves http://127.0.0.1:8051. `?network=LV_Grid_101` opens a network,
+`?tab=checks|map|networks` a tab.
+
+- **Overview**: key figures (networks, connections, km of line, transformers,
+  fuse-rated power, existing generation, located nodes, HV/MV tracing) and the
+  distributions of transformer ratings, fuse sizes, line km by cross-section,
+  longest path from the transformer, planning demand against transformer
+  rating, and LV networks per HV/MV substation.
+- **Checks**: data checks with the number of networks and items affected.
+  Errors stop the load flow (no transformer, nodes cut off, self-loops; the
+  same definitions as `network.py` and the screening's `topology_error`),
+  warnings point at implausible data (no connection, a connection fuse or a
+  node's existing generation above the transformer rating), info describes
+  the data (meshed lines, several or 10 kVA transformers, cross-section
+  placeholders, nodes without coordinates, unknown HV/MV substation). A row
+  filters the network table to its networks.
+- **Map**: the substations coloured by check status, a figure, or the HV/MV
+  substation that feeds them; a click opens the network.
+- **Networks**: one sortable, filterable row per network.
+- **Network**: facts and checks, the topology on the map (lines by ampacity,
+  connections sized by fuse-rated power, existing generation in orange, nodes
+  without coordinates at their nearest located neighbour), and its lines and
+  connections as tables.
+
+What it showed on the 2026-10 export: `pg_kw` (documented as existing PV) also
+holds plants recorded on an LV node (Usine Lienne 95 MW, Balavaud pumping
+47 MW, ...), 299 MW in total against 116 MW without the 12 nodes above their
+transformer rating; 10 kVA transformers sit at plant and pumping sites; 28 % of
+the nodes have no coordinates; 9 networks cannot be load-flowed.
+
 ## Subtransmission view (HV/MV substations)
 
 The export also holds the MV level: the MV lines (one sheet per HV/MV
@@ -214,7 +250,7 @@ demand and generation factors, limits, load-flow tolerances.
 ```
 config.json          screening settings
 lvgrid/              the package: config, data, network, loadflow, scenario (reader),
-                     injections (reader), screening, dashboard, geo, mv, __main__
+                     injections (reader), screening, dashboard, explorer, geo, mv, __main__
 tests/               pytest smoke tests (generate a 3-network test scenario with ../injection-scenarios)
 results/             runs (ignored by git)
 ```

@@ -10,6 +10,7 @@ scenario    a generated scenario (../injection-scenarios/output/<name>) as the s
 injections  per-node power time series read from the scenario's daily CSV files
 screening   one-shot sanity check and temporal screening over the portfolio
 dashboard   HTML dashboard (plotly) from a results folder
+explorer    grid data explorer (Dash): the export's figures, data checks, maps and topologies
 geo         node <-> coordinates
 mv          HV/MV substation feeding each network; aggregation per substation
 """

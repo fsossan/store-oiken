@@ -103,3 +103,21 @@ def test_stream_and_case_checks():
             check_cases(bad, signs)
     with pytest.raises(ValueError):
         check_streams({"demand": "load", "pv": "gen"})
+
+
+def test_explorer(portfolio, cfg):
+    from lvgrid.explorer import CHECKS, COLOR_BY, build_inventory, make_app, map_figure, overview_figures, topology_figure
+    ids = ["LV_Grid_101", "LV_Grid_2080", "LV_Grid_2101", "LV_Grid_92696"]
+    inv = build_inventory(cfg, ids)
+    n = inv.nets
+    assert sorted(n.index) == sorted(ids) and len(inv.checks) == len(CHECKS)
+    assert n.at["LV_Grid_101", "status"] == "ok" and n.at["LV_Grid_101", "n_connections"] == 30
+    assert n.at["LV_Grid_2101", "n_build_error"] == 1 and n.at["LV_Grid_2101", "status"] == "errors"   # no transformer
+    assert n.at["LV_Grid_92696", "n_self_loop"] > 0 and n.at["LV_Grid_92696", "status"] == "errors"
+    assert n.at["LV_Grid_2080", "n_pv_over_trafo"] == 1 and n.at["LV_Grid_2080", "status"] == "warnings"  # 95 MW plant
+    assert set(overview_figures(inv)) == {"trafos", "fuses", "sections", "lengths", "planning", "feeders"}
+    for by in [*COLOR_BY, "hvmv:643"]:
+        map_figure(inv, by)
+    lines, subs = portfolio.network("LV_Grid_101")
+    assert topology_figure(inv, net_of(portfolio, cfg, "LV_Grid_101"), lines).layout.map.style == "carto-positron"
+    make_app(inv)

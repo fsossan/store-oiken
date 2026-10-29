@@ -5,7 +5,7 @@
     python generate_scenario.py generate my_case               # -> output/my_case/ (allocation, daily/, yearly/)
     python generate_scenario.py fit-demand                     # once: fit and cache the household demand model
     python generate_scenario.py clearsky --tilt 30 --year 2025 # clear-sky PV profile for a location (pvlib)
-    python generate_scenario.py dashboard                      # demand dashboard of the outputs on http://127.0.0.1:8050
+    python generate_scenario.py dashboard                      # scenario browser of the outputs on http://127.0.0.1:8050
 """
 from __future__ import annotations
 
@@ -65,7 +65,7 @@ def main(argv=None) -> int:
     p = sub.add_parser("fit-demand", parents=[common], help="fit and cache the household demand model (needs the training .mat)")
     p.set_defaults(func=cmd_fit_demand)
 
-    p = sub.add_parser("dashboard", help="demand dashboard of the generated scenarios (Dash, local server, read-only)")
+    p = sub.add_parser("dashboard", help="scenario browser of the generated scenarios (Dash, local server, read-only)")
     p.add_argument("--port", type=int, default=8050)
     p.add_argument("--host", default="127.0.0.1")
     p.set_defaults(func=cmd_dashboard)

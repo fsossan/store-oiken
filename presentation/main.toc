@@ -1,0 +1,4 @@
+\babel@toc {french}{}\relax 
+\beamer@sectionintoc {1}{Projet STORE : valeur pour la recherche sur les réseaux}{3}{0}{1}
+\beamer@sectionintoc {2}{Collaboration avec OIKEN : résultats marquants}{8}{0}{2}
+\beamer@sectionintoc {3}{L'IA dans la boucle de l'exploitation des réseaux}{16}{0}{3}

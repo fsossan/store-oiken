@@ -4,3 +4,4 @@ scipy>=1.11
 pandas>=2.1
 plotly>=5.24          # dashboard (go.Scattermap needs >= 5.24)
 networkx>=3.1         # topology layout when a network has no coordinates
+dash>=2.16,<4         # grid data explorer only (dash_table.DataTable leaves the core in Dash 4)

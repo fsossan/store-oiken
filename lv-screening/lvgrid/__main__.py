@@ -56,6 +56,11 @@ def cmd_dashboard(a):
     print(f"-> {out}")
 
 
+def cmd_explore(a):
+    from .explorer import run as run_explorer
+    run_explorer(load_config(a.config), host=a.host, port=a.port)
+
+
 def cmd_mv_map(a):
     from .data import load_portfolio
     from .mv import write_mv_map
@@ -103,6 +108,11 @@ def main(argv=None) -> int:
     p.add_argument("--networks", default="flagged", help="per-network pages: flagged (default) | all | none | id,id,...")
     p.add_argument("--max-pages", type=int, default=300)
     p.set_defaults(func=cmd_dashboard)
+
+    p = sp("explore", help="grid data explorer: what the LV export holds, with data checks (Dash, local server, read-only)")
+    p.add_argument("--port", type=int, default=8051)
+    p.add_argument("--host", default="127.0.0.1")
+    p.set_defaults(func=cmd_explore)
 
     p = sp("geo", help="match nodes to coordinates (needs data/geo/nodes_db.csv)")
     p.set_defaults(func=cmd_geo)

@@ -14,7 +14,7 @@ python3 generate_scenario.py new sc1_2040 --name pv150  # a second configuration
 python3 generate_scenario.py generate sc1_2040          # stage 2 -> output/sc1_2040/   (a few minutes with the yearly files, ~500 MB)
 python3 generate_scenario.py generate pv150 --networks 101,230   # a subset (tests, debugging)
 python3 generate_scenario.py clearsky --tilt 30 --year 2025 --day 2025-06-21   # clear-sky PV profile (pvlib)
-python3 generate_scenario.py dashboard                  # demand dashboard on http://127.0.0.1:8050 (read-only)
+python3 generate_scenario.py dashboard                  # scenario browser on http://127.0.0.1:8050 (read-only)
 python3 -m pytest tests                                 # smoke tests (a few seconds)
 ```
 
@@ -27,7 +27,7 @@ Written by `new` from the `sfoe` table and `scenario_defaults` of
 |---|---|
 | `sfoe` | SFOE Energy Perspectives 2050+ figures of the scenario: national PV MW, EV fleet, populations (national, Sion+Sierre) |
 | `time` | `step_min` (15), `days` of the daily product (1), `yearly.enabled` / `yearly.step_min` (60) |
-| `demand` | `demand_factor` (6 % of the fuse-rated peak, the DSO planning value), demand model file, seed offset |
+| `demand` | `demand_factor`: each connection's P_max as a share of its fuse-rated power (0.22, so that the median network of 27 connections peaks at the DSO planning value of 6 %; see `tools/demand_aggregation_demo.ipynb`), demand model file, seed offset |
 | `pv` | yearly profile file, series (`clearsky` / `measured`), season for the representative day, scale |
 | `ev` | charger kW, arrival time and energy per session (truncated normal or GEV, see below), seed offset |
 
@@ -126,37 +126,56 @@ without seasonality; existing PV in
 the grid data is not added to the scenario PV (the SFOE total is taken as
 the total).
 
-## Dashboard (`dashboard`)
+## Scenario browser (`dashboard`)
 
-A local Dash app (`scengen/dashboard.py`) on the household demand of the
-generated scenarios; PV and EV are not shown yet. Pick a scenario folder: its
-configuration, and a badge telling whether `output/<name>/` still matches
+A local Dash app (`scengen/dashboard.py`) on everything a scenario produced:
+demand, PV, EV and any further stream listed in `scenario.json`. Net load =
+loads − generation; below zero the network feeds back through its
+transformer (reverse flow). Pick a scenario, and optionally a second one
+under *compare with*. A badge tells whether `output/<name>/` still matches
 `scenarios/<name>/config.json` (hash in `scenario.json`) and the current
-generator version, or has not been generated. It never starts a generation; reload the page after one.
+generator version, or has not been generated; the configuration is one click
+away. It never starts a generation; reload the page after one.
 
-- **Portfolio**: connections, demand_factor, annual GWh, kWh per connection,
-  regional peak and load factor; each network's yearly peak in % of its fuse
-  power against its size, with the demand_factor ceiling; demand per
-  connection; the regional mean day with the 5-95 % band of days, the yearly
-  heatmap (day x hour) and the duration curve.
-- **Networks**: sortable, filterable table (fuse power, ceiling, annual MWh,
-  peak in % of fuse power and of the transformer, peak time); a row, or a
-  point of the Portfolio scatter, opens the network: its fuses, every
-  connection on the representative day in % of its own fuse power against the
-  network, the coincidence factor, the yearly heatmap and duration curve.
+- **Overview**: key figures (energy per stream, kWh per connection, PV
+  full-load hours, kWh per vehicle, regional peak and largest reverse flow,
+  networks above their transformer rating, networks with reverse flow); the
+  regional day (representative, peak, reverse-flow or mean day; streams
+  stacked, net load, and the compared scenario's net load); the hourly year
+  with a range slider; energy per month; duration curves; the net-load
+  heatmap (day × hour, red = reverse flow).
+- **Networks**: every network on two selectable axes (default: largest
+  reverse flow against peak net load, both in % of the transformer, with the
+  100 % lines) and a sortable, filterable table (energy per stream, peak and
+  lowest net load, transformer loading, reverse-flow hours; above 100 % in
+  red). A point or a row opens the network.
+- **Network**: fuses, transformer, PV, EVs, energy and peaks; a day of its
+  streams against the transformer rating (the representative day at the
+  daily step, or the peak, reverse-flow or mean day from the yearly file);
+  each connection's demand, PV or EV in % of its own fuse power, with the
+  coincidence factor; the hourly year, duration curves, heatmap; a link to
+  the network in the grid data explorer (`python3 -m lvgrid explore`).
+- **Compare**: key figures of both scenarios with the change, the regional
+  net load over the day (mean and 5-95 % band) and its duration curve, and
+  every network's value in one scenario against the other (selectable).
 
-The yearly files are read once per scenario (2-3 s for the 1081 networks) and
-kept in memory.
+Links take `?scenario=`, `?compare=`, `?tab=` (`overview`, `networks`,
+`network`, `compare`) and `?network=`, e.g.
+`http://127.0.0.1:8050/?scenario=sc1_2040&compare=sc1_2030&tab=compare`.
+The yearly files are hourly means (peaks within the hour are higher; the
+screening uses the daily product). They are read once per scenario (2-3 s
+for the 1081 networks) and kept in memory for the last two scenarios.
 
 ## Layout
 
 ```
 generate_scenario.py   the script (new | generate | fit-demand | clearsky | dashboard)
-scengen/               config, data, generate, clearsky, dashboard
+scengen/               config, data, generate, clearsky, dashboard (scenario browser)
 scengen/models/        one module per stream: demand, pv, ev (+ common allocation helpers)
 config.json            demand-model fit settings, scenario defaults, SFOE table
 scenarios/<name>/      config.json per scenario (tracked)
 output/<name>/         generated files (ignored)
-tools/                 one-off exports: export_pv_profiles.py, export_demand_train_days.m
+tools/                 one-off exports (export_pv_profiles.py, export_demand_train_days.m) and
+                       demand_aggregation_demo.ipynb (notebook: spatial smoothing of the demand model, T(n))
 tests/                 pytest smoke tests
 ```

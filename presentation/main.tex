@@ -13,12 +13,10 @@
 \usepackage{colortbl}    % \rowcolor : scénario étudié dans le tableau des scénarios
 \usepackage{array}       % >{\raggedright} dans les colonnes p{} des tableaux
 
-\title[Projet STORE]{Projet STORE}
-\subtitle{Valeur pour la recherche, collaboration avec OIKEN\\
-          et IA dans l'exploitation des réseaux}
+\title[OIKEN et Gridlab HES-SO Valais-Wallis]{OIKEN \& Gridlab : collaborations et création de valeur}
 \author[F. Sossan]{Prof. Fabrizio Sossan}
 \institute{Gridlab, HES-SO Valais-Wallis\\fabrizio.sossan@hevs.ch}
-\date{Présentation à la direction -- \today}
+\date{Présentation à la direction de OIKEN -- \today}
 
 % Chiffre clé : \kpi[largeur]{valeur}{légende}
 \newcommand{\kpi}[3][2.9cm]{%
@@ -30,15 +28,13 @@
   \end{tikzpicture}%
 }
 
-% Partenaire financeur : \partner{nom}{rôle}{en espèces}{en nature}
-\newcommand{\partner}[4]{%
+% Partenaire financeur : \partner{nom}{contribution financière}
+\newcommand{\partner}[2]{%
   \begin{tikzpicture}
-    \node[fill=wash, rounded corners=4pt, text width=3.6cm, minimum height=3.4cm,
+    \node[fill=wash, rounded corners=4pt, text width=3.5cm, minimum height=2.2cm,
           align=center, inner sep=6pt]
-      {{\Large\bfseries\color{primary}#1}\\[2pt]
-       {\footnotesize\color{subtle}#2}\\[10pt]
-       {\fontsize{20}{22}\selectfont\bfseries\color{ink}#3}\\[2pt]
-       {\footnotesize\color{subtle}en espèces\\+ #4 en nature}};
+      {{\large\bfseries\color{primary}#1}\\[8pt]
+       {\Large\selectfont\bfseries\color{ink}#2}};
   \end{tikzpicture}%
 }
 
@@ -59,137 +55,136 @@
   \titlepage
 \end{frame}
 
-\begin{frame}{Sommaire}
-  \tableofcontents
-\end{frame}
 
-% ==========================================================================
-\section[STORE et la recherche]{Projet STORE : valeur pour la recherche sur les réseaux}
-% ==========================================================================
-
-\begin{frame}{Un double objectif}
-  \begin{columns}[T,onlytextwidth]
-    \begin{column}{0.48\textwidth}
-      \begin{block}{1 \quad Objectif principal}
-        \textbf{Des outils pour les gestionnaires de réseau.}\par\smallskip
-        Les construire ensemble, en assurant le transfert de la recherche
-        vers l'exploitation.
-      \end{block}
+\begin{frame}{Gridlab : activités de recherche et équipe}
+  \begin{columns}[c,onlytextwidth]
+    \begin{column}{0.5\textwidth}
+      \centering
+      \begin{tikzpicture}[
+          vlabel/.style={text width=2.2cm, align=center, font=\small\bfseries,
+                         text=primary, inner sep=0pt},
+          core/.style={primary, line width=1.2pt},
+        ]
+        \def\R{1.7}
+        \coordinate (A) at (150:1.35);   % réseau électrique
+        \coordinate (B) at (30:1.35);    % technologies
+        \coordinate (C) at (270:1.35);   % marchés et politiques
+        % Trois disques translucides : les recouvrements ressortent d'eux-mêmes
+        \foreach \c in {A,B,C} {
+          \fill[subtle!30, fill opacity=0.55] (\c) circle (\R);
+        }
+        % Cœur : intersection des trois disques
+        \begin{scope}
+          \clip (A) circle (\R); \clip (B) circle (\R);
+          \fill[primary!25] (C) circle (\R);
+        \end{scope}
+        \foreach \c in {A,B,C} {
+          \draw[subtle!60, line width=0.6pt] (\c) circle (\R);
+        }
+        \begin{scope}
+          \clip (A) circle (\R); \clip (B) circle (\R); \draw[core] (C) circle (\R);
+        \end{scope}
+        \begin{scope}
+          \clip (B) circle (\R); \clip (C) circle (\R); \draw[core] (A) circle (\R);
+        \end{scope}
+        \begin{scope}
+          \clip (C) circle (\R); \clip (A) circle (\R); \draw[core] (B) circle (\R);
+        \end{scope}
+        \node[vlabel] at (150:1.85) {Réseau\\électrique};
+        \node[vlabel] at (30:1.85)  {Technologies de réseau};
+        \node[vlabel] at (270:1.85) {Marchés de\\l'électricité};
+      \end{tikzpicture}
     \end{column}
-    \begin{column}{0.48\textwidth}
-      \begin{block}{2 \quad Objectif de recherche}
-        \textbf{Des outils avancés d'aide à la décision.}\par\smallskip
-        Pour la planification et l'exploitation des réseaux de distribution.
-      \end{block}
+    \begin{column}{0.46\textwidth}
+      {\bfseries\color{primary}Recherche formelle\par}
+      Méthodes numériques, modèles et algorithmes.
+
+      \vspace{1.2em}
+      {\bfseries\color{primary}Recherche expérimentale\par}
+      Validation de modèles et de méthodes de contrôle en conditions
+      réalistes.
+
+      \vspace{1.2em}
+      {\bfseries\color{primary}Transfert technologique\par}
+      Vers les partenaires industriels ; essais de technologies.
     \end{column}
   \end{columns}
 
-  \vspace{2em}
-  \centering
-  La recherche alimente les outils ; leur usage sur des réseaux réels
-  alimente la recherche.
+  \vfill
+
+  \alert{Team} : 3~professeurs et plus de 10~collaborateurs au total.
 \end{frame}
 
-\begin{frame}{Économie : un flagship Innosuisse de 6,4\,MCHF}
-  \centering
-  \kpi{6,4}{MCHF\\coût total du projet}\hfill
-  \kpi{4,25}{MCHF d'Innosuisse\\overhead compris}\hfill
-  \kpi{2,7}{MCHF apportés par\\les partenaires}\hfill
-  \kpi{3,05}{MCHF à la HEI-VS\\hors overhead}
+\begin{frame}{Collaborations en cours et valeur apportée}
+  Deux projets en cours avec OIKEN : \textbf{STORE} (Innosuisse Flagship) et \textbf{Juice Master} (OFTP).
 
-  \vspace{1.4em}
-  \raggedright
-  Décembre 2023 -- juillet 2027 (44 mois). Quatre hautes écoles (ETHZ, EPFL,
-  BFH, HEI-VS) et treize partenaires de mise en œuvre ; la HEI-VS coordonne.
-
-  \vspace{0.8em}
-  {\footnotesize\color{subtle} Montants de la demande Innosuisse 108.230
-  FS-EE. Partenaires : 0,97\,MCHF en espèces et 1,76\,MCHF en nature. HEI-VS :
-  2,08\,MCHF couverts par Innosuisse et 0,97\,MCHF versés par les
-  partenaires.}
-\end{frame}
-
-\begin{frame}{Économie : les gestionnaires de réseau cofinancent}
-  \centering
-  \partner{OIKEN}{distribution\\Sion et Sierre}{246\,kCHF}{294\,kCHF}\hfill
-  \partner{Valgrid}{réseau suprarégional\\Valais}{90\,kCHF}{24\,kCHF}\hfill
-  \partner{Swissgrid}{réseau de transport\\Suisse}{200\,kCHF}{50\,kCHF}
-
-  \vspace{1.4em}
-  \raggedright
-  Ensemble, 536\,kCHF en espèces : 55\,\% des espèces apportées par
-  l'ensemble des partenaires. Swissgrid et Valgrid financent la
-  planification coordonnée du stockage, du transport à la distribution, sur
-  le cas du Valais central avec OIKEN.
-
-  \vspace{0.8em}
-  {\footnotesize\color{subtle} Montants de la demande Innosuisse 108.230
-  FS-EE ; en nature : heures de travail des partenaires.}
-\end{frame}
-
-\begin{frame}{Développer pleinement les compétences locales}
-  \centering
-  \begin{tikzpicture}[node distance=0.7cm,
-      every node/.style={text width=3.4cm, minimum height=1.5cm}]
-    \node (hire)  [stage]                 {Recruter des ingénieurs au profil
-                                           d'exploitant};
-    \node (train) [stage, right=of hire]  {Les former sur les réseaux d'OIKEN
-                                           et au GridLab};
-    \node (keep)  [stagehi, right=of train]{Des compétences qui restent en
-                                            Valais};
-    \draw [arrow, primary] (hire)  -- (train);
-    \draw [arrow, primary] (train) -- (keep);
-  \end{tikzpicture}
-
-  \vspace{1.8em}
-  \raggedright
-  Ces recrues renforcent aussi le GridLab : essais, démonstrateurs et
-  transfert vers les gestionnaires de réseau.
+  \vspace{1.2em}
+  \alert{Apport de la collaboration}:
+  \vspace{0.3em}
+  \begin{itemize}
+    \setlength{\itemsep}{0.7em}
+    \item Apprentissage mutuel : partage de connaissances, données réelles et retours du terrain.
+    \item Transfert technologique : des outils de recherche vers la planification et l’exploitation du réseau.
+    \item Formation : des cas réels et une orientation smart grid renforcée.
+    \item Talents : former en Valais la prochaine génération d’ingénieurs des réseaux.
+  \end{itemize}
 \end{frame}
 
 % ==========================================================================
-\section[Collaboration OIKEN]{Collaboration avec OIKEN : résultats marquants}
+%\section[STORE : faits marquants]{STORE : faits marquants}
 % ==========================================================================
 
-\begin{frame}[c]
-  \centering
-  {\small\color{subtle}La question}\par
-  \vspace{0.8em}
-  {\LARGE\bfseries\color{primary}Les réseaux d'OIKEN sont-ils prêts\\
-   pour la transition énergétique ?}\par
-  \vspace{0.8em}
-  {\color{secondary}\rule{0.3\textwidth}{1.3pt}}\par
-  \vspace{0.8em}
-  Une question ambitieuse : nous y répondons réseau par réseau, à partir des
-  données réelles.
+\begin{frame}{Innosuisse Flagship STORE (2023-2027)}
+  
+  Montant global 6,4\,MCHF, 4~écoles, 13~partenaires industriels avec l'objectif
+   de etudier le role du stockage d'energie dans la transition énergétique.
+
+  \vfill
+
+  \textbf{Partenaires reseux et contributions financières} : trois gestionnaires de réseau
+
+  \vspace{5mm}
+
+  \partner{OIKEN}{$\sim$250\,kCHF}\hfill
+  \partner{Valgrid}{$\sim$100\,kCHF}\hfill
+  \partner{Swissgrid}{$\sim$200\,kCHF}
+
+  \vfill
+
+  que a permis de debloquer un financement globale de ~1 MCHF sur le suject reseau et stockage.
+  
+
+  
 \end{frame}
 
-\begin{frame}{Une analyse bottom-up, unique}
+\begin{frame}{Est-ce que les réseaux d'OIKEN sont prêts pour la transition énergétique ?}
+  Question ambitieuse approche avec un methodologie bottom-up ...
+
+  \vspace{0.4em}
   \begin{columns}[c,onlytextwidth]
     \begin{column}{0.47\textwidth}
       \centering
-      \begin{tikzpicture}[node distance=0.55cm,
-          every node/.style={text width=5cm, minimum height=1.1cm}]
+      \begin{tikzpicture}[node distance=0.45cm,
+          every node/.style={text width=5cm, minimum height=1cm}]
         \node (node) [stage] {\textbf{Données réseau d'OIKEN}\\chaque
                               raccordement : demande, PV, VE};
-        \node (lv)   [stage, above=of node] {\textbf{1116 réseaux BT}\\calcul
-                              de répartition de charge, pas de 15 min};
+        \node (lv)   [stage, above=of node] {\textbf{1116 réseaux de niveau 7}\\calcul
+                              de load flow, pas de 15 min};
         \node (hv)   [stagehi, above=of lv] {\textbf{11 postes HT/MT}\\somme
-                              des réseaux BT alimentés};
+                              des réseaux de niveau 7 alimentés};
         \draw [arrow, primary] (node) -- (lv);
         \draw [arrow, primary] (lv)   -- (hv);
       \end{tikzpicture}
     \end{column}
     \begin{column}{0.49\textwidth}
       \begin{itemize}
-        \item \textbf{Unique} : nous partons des données réelles du réseau,
-              raccordement par raccordement, et non de réseaux types
+        \item \textbf{Bottom-up} : nous partons des données réelles du réseau,
+              raccordement par raccordement
         \item \textbf{Scénarios} : scénario-cadre de l'OFEN pour la
               planification des réseaux, horizons 2030 et 2040
         \item \textbf{Traçable} : chaque dépassement est rattaché à son
               réseau, à son nœud et à sa cause (demande, PV, VE)
-        \item \textbf{Rapide} : tout le portefeuille en \(\approx 30\) s
-              sur un ordinateur portable
+        \item \textbf{Scriptable et open source} : l’analyse peut être reproduite en quelques clics (*).
       \end{itemize}
     \end{column}
   \end{columns}
@@ -197,16 +192,15 @@
 
 \begin{frame}{Le défi : un grand jeu de données}
   \centering
-  \kpi[3.6cm]{1116}{réseaux basse tension,\\avec le réseau MT}\hfill
+  \kpi[3.6cm]{1116}{réseaux de niveau 7,\\avec le réseau MT}\hfill
   \kpi[3.6cm]{3,9\,GB}{base de données réseau\\extraite et reconstruite}\hfill
-  \kpi[3.6cm]{3300\,km}{de lignes BT,\\100\,000 tronçons}
+  \kpi[3.6cm]{3300\,km}{de lignes de niveau 7,\\100\,000 tronçons}
 
   \vspace{1.4em}
   \raggedright
-  Extraire les réseaux de la base du GRD, reconstruire la topologie BT et
-  MT, puis contrôler automatiquement chaque réseau avant tout calcul :
-  1036 réseaux sur 1116 sont calculables d'emblée, les autres sont signalés
-  avec leur cause.
+
+Extraction et contrôle automatique des topologies : 1’036 réseaux sur 1’116 directement calculables.
+
 \end{frame}
 
 \begin{frame}{Ce que les contrôles ont révélé}
@@ -218,16 +212,15 @@
     \toprule
     Constat & Réseaux & Détail \\
     \midrule
-    Réseaux BT maillés (boucles ou branches parallèles), alors que la BT
-      est exploitée en radial                                 & 259 & 23\,\% du portefeuille \\
+    Réseaux niveau 7 maillés (boucles ou branches parallèles)                                 & 259 & 23\,\% du portefeuille \\
     Section de conducteur manquante ou fictive (0 ou 999\,mm²) & 592 & 2721 tronçons, 68\,km \\
-    \og PV existant \fg{} : 12 nœuds BT portent 183\,MW, chacun au-delà de
+    \og PV existant \fg{} : 12 nœuds de niveau 7 portent 183\,MW, chacun au-delà de
       la puissance de son propre transformateur, ce qu'aucun vrai
-      raccordement BT ne permet (centrales, pompages)          & 11  & 183\,MW sur 299\,MW \\
+      raccordement au niveau 7 ne permet (centrales, pompages)          & 11  & 183\,MW sur 299\,MW \\
     Réseaux non calculables : sans transformateur, nœuds isolés, ligne
       bouclée sur un seul nœud                                 & 9   & 2 + 2 + 5 réseaux \\
     Transformateurs fictifs (10\,kVA ou moins) ou saisis à l'envers
-      (BT vers MT)                                             & 36  & 13 fictifs, 30 à l'envers \\
+      (niveau 7 vers MT)                                             & 36  & 13 fictifs, 30 à l'envers \\
     Rattachement au poste HT/MT absent                         & 18  & zone MT erronée pour
                                                                        environ 30\,\% des réseaux \\
     Réseaux sans aucun raccordement                            & 35  & \\
@@ -241,55 +234,57 @@
   pour fiabiliser la base avant toute étude de planification.
 \end{frame}
 
-\begin{frame}{Les scénarios : le scénario-cadre de la Confédération}
-  Le \textbf{scénario-cadre pour la planification des réseaux} (OFEN, issu
-  des Perspectives énergétiques 2050+) est la base commune de la
-  Confédération pour planifier les réseaux électriques. Il retient trois
-  scénarios :
-
-  \vspace{1em}
-  \centering
-  \small
-  \renewcommand{\arraystretch}{1.35}
-  \begin{tabular}{@{}lcccc@{}}
-    \toprule
-    & \multicolumn{2}{c}{PV installé en Suisse (GW)}
-    & \multicolumn{2}{c}{VE en Suisse (millions)} \\
-    \cmidrule(lr){2-3}\cmidrule(l){4-5}
-    Scénario & 2030 & 2040 & 2030 & 2040 \\
-    \midrule
-    \rowcolor{wash}
-    \textbf{Référence} (ZERO Base) & \textbf{9,8} & \textbf{24,1}
-                                   & \textbf{0,93} & \textbf{2,94} \\
-    Divergence (ZERO A)            & 7,7  & 10,1 & 0,98 & 3,23 \\
-    Couplage des secteurs (ZERO B) & 12,2 & 30,1 & 0,87 & 2,52 \\
-    \bottomrule
-  \end{tabular}
-
-  \vspace{1.2em}
-  \raggedright
-  Résultats présentés : \textbf{scénario Référence, horizon 2040}, ramené à
-  Sion et Sierre au prorata de la population, soit environ 266\,MW de PV et
-  32\,500 VE. Divergence et Couplage des secteurs : prochaine étape, la
-  chaîne est prête.
-\end{frame}
+% --- Diapositive mise en commentaire (scénario-cadre de la Confédération) ---
+% \begin{frame}{Les scénarios : le scénario-cadre de la Confédération}
+%   Le \textbf{scénario-cadre pour la planification des réseaux} (OFEN, issu
+%   des Perspectives énergétiques 2050+) est la base commune de la
+%   Confédération pour planifier les réseaux électriques. Il retient trois
+%   scénarios :
+%
+%   \vspace{1em}
+%   \centering
+%   \small
+%   \renewcommand{\arraystretch}{1.35}
+%   \begin{tabular}{@{}lcccc@{}}
+%     \toprule
+%     & \multicolumn{2}{c}{PV installé en Suisse (GW)}
+%     & \multicolumn{2}{c}{VE en Suisse (millions)} \\
+%     \cmidrule(lr){2-3}\cmidrule(l){4-5}
+%     Scénario & 2030 & 2040 & 2030 & 2040 \\
+%     \midrule
+%     \rowcolor{wash}
+%     \textbf{Référence} (ZERO Base) & \textbf{9,8} & \textbf{24,1}
+%                                    & \textbf{0,93} & \textbf{2,94} \\
+%     Divergence (ZERO A)            & 7,7  & 10,1 & 0,98 & 3,23 \\
+%     Couplage des secteurs (ZERO B) & 12,2 & 30,1 & 0,87 & 2,52 \\
+%     \bottomrule
+%   \end{tabular}
+%
+%   \vspace{1.2em}
+%   \raggedright
+%   Résultats présentés : \textbf{scénario Référence, horizon 2040}, ramené à
+%   Sion et Sierre au prorata de la population, soit environ 266\,MW de PV et
+%   32\,500 VE. Divergence et Couplage des secteurs : prochaine étape, la
+%   chaîne est prête.
+% \end{frame}
+% --- fin de la diapositive en commentaire ---
 
 \begin{frame}[fragile]{Premiers éléments de réponse : presque prêts en 2030, pas en 2040}
   \begin{columns}[c,onlytextwidth]
     \begin{column}{0.52\textwidth}
       \centering
-      {\small\textbf{Réseaux BT en dépassement, par type}\\
-       \footnotesize\color{subtle}ordres de grandeur}\par
-      \vspace{0.4em}
+      {\small\bfseries\color{primary}Réseaux de niveau 7 en dépassement\par
+       \footnotesize\color{subtle}par type de contrainte\par}
+      \vspace{0.6em}
       \shorthandoff{;:!?}% pgfplots lit le ; final avant que babel le rende
       \begin{tikzpicture}
         \begin{axis}[
-            xbar, scale only axis, width=2.9cm, height=3.6cm,
+            xbar, scale only axis, width=2.9cm, height=2.8cm,
             bar width=6pt, enlarge y limits=0.18,
             xmin=0, xmax=300, clip=false, hide x axis,
             axis y line*=left, y axis line style={draw=subtle},
-            ytick=data, symbolic y coords={over,under,trafo,line},
-            yticklabels={Surtension, Sous-tension, Transformateur surchargé,
+            ytick=data, symbolic y coords={volt,trafo,line},
+            yticklabels={Tension au-delà de EN~50160, Transformateur surchargé,
                          Ligne surchargée},
             yticklabel style={font=\footnotesize, text=ink},
             major tick length=0pt,
@@ -300,173 +295,197 @@
                           at={(1,1.03)}, anchor=south east, legend columns=2,
                           /tikz/every even column/.append style={column sep=8pt}},
           ]
+          % tension : réseaux hors de la bande 0,9--1,1 pu (EN 50160), sous- ou
+          % surtension ; 2040 : 216 sous-tension + 30 surtension, 29 les deux = 217 ;
+          % 2030 : 30 sous-tension, aucune surtension.
           \addplot[fill=primary, draw=none]
-            coordinates {(30,over) (216,under) (241,trafo) (270,line)};
+            coordinates {(217,volt) (241,trafo) (270,line)};
           \addplot[fill=primary!40, draw=none]
-            coordinates {(0,over) (30,under) (3,trafo) (28,line)};
+            coordinates {(30,volt) (3,trafo) (28,line)};
           \legend{2040, 2030}
         \end{axis}
       \end{tikzpicture}
     \end{column}
     \begin{column}{0.44\textwidth}
-      \kpi[2.2cm]{4\,\%}{des réseaux BT\\en 2030\\(45 sur 1036)}\hfill
-      \kpi[2.2cm]{36\,\%}{des réseaux BT\\en 2040\\(371 sur 1036)}
+      \kpi[2.2cm]{4\,\%}{des réseaux de\\niveau 7 en 2030\\(45 sur 1036)}\hfill
+      \kpi[2.2cm]{36\,\%}{des réseaux de\\niveau 7 en 2040\\(371 sur 1036)}
 
-      \vspace{0.8em}
-      En 2030, 12 de ces réseaux dépassent déjà avec la demande actuelle ; la
-      recharge des VE en ajoute 33, le PV aucun.
+      
+      % \vspace{0.8em}
+      % \textbf{2030}, 12 réseaux dépassent avec la demande actuelle ;
+      % la recharge des VE en ajoute 33, le PV aucun.
 
-      \vspace{0.4em}
-      De 2030 à 2040 : 3\,\texttimes{} plus de VE, 2,4\,\texttimes{} plus de
-      PV, 8\,\texttimes{} plus de réseaux en dépassement.
+      % \vspace{0.4em}
+      % \textbf{De 2030 à 2040}, 3\,\texttimes{} plus de VE et
+      % 2,4\,\texttimes{} plus de PV donnent 8\,\texttimes{} plus de réseaux
+      % en dépassement.
     \end{column}
   \end{columns}
 
-  \vspace{0.8em}
-  {\footnotesize\color{subtle} Scénario-cadre, scénario Référence (ZERO Base)
-  2030 et 2040, ramené à Sion et Sierre au prorata de la population ; journée
-  représentative au pas de 15 min. Ordres
-  de grandeur : les comptes varient avec le tirage aléatoire de la demande et
-  des arrivées de VE.}
+  \vfill 
+  
+  {\footnotesize\color{subtle} Scénario-cadre OFEN (scénario Référence), ramené a la zone de desserte au prorata de la
+  population (2040 : $\sim$266\,MW de PV, $\sim$32\,500 VE) ; Journée représentative de mi-septembre, au pas de 15 min, avec une consommation (incluant les VE) modélisée aléatoirement avec distribution spatiale.}
 \end{frame}
 
-\begin{frame}[fragile]{D'où viennent les dépassements ? De la demande, bien plus que du PV}
-  \begin{columns}[c,onlytextwidth]
-    \begin{column}{0.52\textwidth}
-      \centering
-      {\small\textbf{Réseaux BT en dépassement en 2040, par cause}}\par
-      \vspace{0.4em}
-      \shorthandoff{;:!?}% pgfplots lit le ; final avant que babel le rende
-      \begin{tikzpicture}
-        \begin{axis}[
-            xbar, scale only axis, width=2.9cm, height=3.6cm,
-            bar width=6pt, enlarge y limits=0.18,
-            xmin=0, xmax=300, clip=false, hide x axis,
-            axis y line*=left, y axis line style={draw=subtle},
-            ytick=data, symbolic y coords={over,under,trafo,line},
-            yticklabels={Surtension, Sous-tension, Transformateur surchargé,
-                         Ligne surchargée},
-            yticklabel style={font=\footnotesize, text=ink},
-            major tick length=0pt,
-            nodes near coords={\pgfmathprintnumber[assume math mode=true]{\pgfplotspointmeta}},
-            nodes near coords style={font=\scriptsize, text=ink},
-            area legend, reverse legend,
-            legend style={draw=none, font=\footnotesize, text=ink,
-                          at={(1,1.03)}, anchor=south east, legend columns=2,
-                          /tikz/every even column/.append style={column sep=8pt}},
-          ]
-          \addplot[fill=secondary, draw=none]
-            coordinates {(30,over) (0,under) (8,trafo) (38,line)};
-          \addplot[fill=primary, draw=none]
-            coordinates {(0,over) (216,under) (241,trafo) (268,line)};
-          \legend{PV, Demande (ménages et VE)}
-        \end{axis}
-      \end{tikzpicture}
-    \end{column}
-    \begin{column}{0.44\textwidth}
-      \kpi[2.2cm]{357}{réseaux :\\recharge des VE,\\le soir}\hfill
-      \kpi[2.2cm]{50}{réseaux :\\PV, à midi}
-
-      \vspace{0.8em}
-      Demande actuelle des ménages seule : 12 réseaux. Sur les 50 réseaux
-      touchés par le PV, 48 le sont aussi par les VE.
-
-      \vspace{0.4em}
-      Levier principal pour le GRD : la recharge pilotée des VE.
-    \end{column}
-  \end{columns}
-
-  \vspace{0.8em}
-  {\footnotesize\color{subtle} Load flow avec la demande seule, puis
-  demande + PV et demande + VE : une cause est retenue si, ajoutée à la
-  demande, elle suffit à créer le dépassement. Un réseau peut avoir les deux
-  causes (PV à midi, VE le soir) ; aucun dépassement n'exige les deux à la fois.}
+\begin{frame}{STORE : prochaines étapes}
+  \begin{enumerate}
+    \setlength{\itemsep}{1.4em}
+    \item \textbf{Produire les résultats finaux}\par\smallskip
+          Les trois scénarios du scénario-cadre, 2030 et 2040, sur tout
+          le portefeuille, après correction des données signalées.
+    \item \textbf{Le stockage comme renforcement non filaire}\par\smallskip
+          Des batteries (BESS) pour éviter ou différer le renforcement :
+          où, quelle puissance et quelle capacité, à quel coût face au
+          renforcement classique.
+  \end{enumerate}
 \end{frame}
 
-\begin{frame}{L'effet remonte jusqu'aux postes HT/MT}
-  \centering
-  \kpi[4.6cm]{0,6 à 2,0\,\texttimes}{pointe de recharge des VE le soir,\\
-    rapportée à la puissance des transformateurs HT/MT}\hspace{1.5cm}%
-  \kpi[4.6cm]{60\,\%}{export PV à midi (environ),\\
-    rapporté à cette même puissance}
+% --- Deux diapositives mises en commentaire (causes des dépassements, postes HT/MT) ---
+% \begin{frame}[fragile]{D'où viennent les dépassements ? De la demande, bien plus que du PV}
+%   \begin{columns}[c,onlytextwidth]
+%     \begin{column}{0.52\textwidth}
+%       \centering
+%       {\small\textbf{Réseaux de niveau 7 en dépassement en 2040, par cause}}\par
+%       \vspace{0.4em}
+%       \shorthandoff{;:!?}% pgfplots lit le ; final avant que babel le rende
+%       \begin{tikzpicture}
+%         \begin{axis}[
+%             xbar, scale only axis, width=2.9cm, height=2.8cm,
+%             bar width=6pt, enlarge y limits=0.18,
+%             xmin=0, xmax=300, clip=false, hide x axis,
+%             axis y line*=left, y axis line style={draw=subtle},
+%             ytick=data, symbolic y coords={volt,trafo,line},
+%             yticklabels={Tension au-delà de EN~50160, Transformateur surchargé,
+%                          Ligne surchargée},
+%             yticklabel style={font=\footnotesize, text=ink},
+%             major tick length=0pt,
+%             nodes near coords={\pgfmathprintnumber[assume math mode=true]{\pgfplotspointmeta}},
+%             nodes near coords style={font=\scriptsize, text=ink},
+%             area legend, reverse legend,
+%             legend style={draw=none, font=\footnotesize, text=ink,
+%                           at={(1,1.03)}, anchor=south east, legend columns=2,
+%                           /tikz/every even column/.append style={column sep=8pt}},
+%           ]
+%           \addplot[fill=secondary, draw=none]
+%             coordinates {(30,volt) (8,trafo) (38,line)};
+%           \addplot[fill=primary, draw=none]
+%             coordinates {(216,volt) (241,trafo) (268,line)};
+%           \legend{PV, Demande (ménages et VE)}
+%         \end{axis}
+%       \end{tikzpicture}
+%     \end{column}
+%     \begin{column}{0.44\textwidth}
+%       \kpi[2.2cm]{357}{réseaux :\\recharge des VE,\\le soir}\hfill
+%       \kpi[2.2cm]{50}{réseaux :\\PV, à midi}
+%
+%       \vspace{0.8em}
+%       Demande actuelle des ménages seule : 12 réseaux. Sur les 50 réseaux
+%       touchés par le PV, 48 le sont aussi par les VE.
+%
+%       \vspace{0.4em}
+%       Levier principal pour le GRD : la recharge pilotée des VE.
+%     \end{column}
+%   \end{columns}
+%
+%   \vspace{0.8em}
+%   {\footnotesize\color{subtle} Load flow avec la demande seule, puis
+%   demande + PV et demande + VE : une cause est retenue si, ajoutée à la
+%   demande, elle suffit à créer le dépassement. Un réseau peut avoir les deux
+%   causes (PV à midi, VE le soir) ; aucun dépassement n'exige les deux à la fois.}
+% \end{frame}
+%
+% \begin{frame}{L'effet remonte jusqu'aux postes HT/MT}
+%   \centering
+%   \kpi[4.6cm]{0,6 à 2,0\,\texttimes}{pointe de recharge des VE le soir,\\
+%     rapportée à la puissance des transformateurs HT/MT}\hspace{1.5cm}%
+%   \kpi[4.6cm]{60\,\%}{export PV à midi (environ),\\
+%     rapporté à cette même puissance}
+%
+%   \vspace{1.6em}
+%   \raggedright
+%   Pour le GRD, la planification du niveau 7 seule ne suffit pas : il faut coordonner
+%   niveau 7 et MT et mobiliser la flexibilité (recharge pilotée, stockage).
+%
+%   \vspace{0.8em}
+%   {\footnotesize\color{subtle} Scénario Référence 2040, somme des injections
+%   des réseaux de niveau 7 par poste HT/MT. Non modélisés : lignes MT et leurs pertes, clients et
+%   producteurs raccordés en MT.}
+% \end{frame}
+% --- fin des diapositives en commentaire ---
 
-  \vspace{1.6em}
-  \raggedright
-  Pour le GRD, la planification BT seule ne suffit pas : il faut coordonner
-  BT et MT et mobiliser la flexibilité (recharge pilotée, stockage).
 
-  \vspace{0.8em}
-  {\footnotesize\color{subtle} Scénario Référence 2040, somme des injections
-  des réseaux BT par poste HT/MT. Non modélisés : lignes MT et leurs pertes, clients et
-  producteurs raccordés en MT.}
+\begin{frame}{Perspectives pour collaborations futures}
+
+  Le panorame est vaste est interessant ...
+
+  \vfill
+  Quattre axes de collaboration identifiés par OIKEN (Gregory Huot, Laetitia Vionnet et tout le team) :
+
+  \vfill
+
+  \begin{fitemize}
+    \item Jumeaux numériques : monitoring, simulation et jumeaux numériques des réseaux
+    \item Flexibilité et pilotage : flexibilité, pilotage dynamique et gestion des intermittences
+    \item Sécurité et résilience : sécurité physique, protections adaptatives et résilience
+    \item Convergence énergétique : convergence énergétique, multi-fluides et infrastructures (Power-to-X)
+  \end{fitemize}
 \end{frame}
 
-% ==========================================================================
-\section[IA et exploitation]{L'IA dans la boucle de l'exploitation des réseaux}
-% ==========================================================================
 
-\begin{frame}{Un grand potentiel, sur les trois fonctions d'exploitation}
-  \begin{columns}[T,onlytextwidth]
-    \begin{column}{0.31\textwidth}
-      \begin{block}{Planification}
-        \horizon{années à mois}
-        Explorer des scénarios, fiabiliser les données, préparer les
-        décisions d'investissement.
-      \end{block}
-    \end{column}
-    \begin{column}{0.31\textwidth}
-      \begin{block}{Programmation}
-        \horizon{veille et infrajournalier}
-        Prévoir la demande et le PV, programmer le stockage et la recharge
-        des VE.
-      \end{block}
-    \end{column}
-    \begin{column}{0.31\textwidth}
-      \begin{block}{Contrôle}
-        \horizon{temps réel}
-        Proposer des consignes, vérifiées par un modèle physique avant
-        d'être appliquées.
-      \end{block}
-    \end{column}
-  \end{columns}
 
-  \vspace{2em}
-  \centering
-  {\large\bfseries\color{primary}L'IA propose, la physique vérifie,
-   l'opérateur décide.}
+\begin{frame}{Physics-informed AI pour l'exploitation des réseaux électriques}
+
+L'IA prend une place croissante dans les entreprises, aussi dans le domaine de l'exploitation des réseaux électriques.
+
+\vfill
+
+\begin{fitemize}
+  \item L'IA propose, la physique vérifie, l'opérateur décide.
+  \item Boucler IA et modèles physiques pour la planification, l’exploitation et le contrôle des réseaux.
+  \item Expérience au Gridlab de ``sandboxed AI environment'': serveur dédié avec NVIDIA RTX PRO 6000 Blackwell, modèle servi localement (vLLM), et VM sandbox isolée pour preserver les données sensibles,  il agit en arrière-plan comme un « partenaire silencieux », en analysant et en vérifiant nos résultats pendant la nuit.
+\end{fitemize}
+
+{\bfseries\color{primary}}
+
+
+
+  
+
 \end{frame}
 
-\begin{frame}{Au GridLab : une GeForce dans la boucle}
-  \begin{columns}[c,onlytextwidth]
-    \begin{column}{0.5\textwidth}
-      \centering
-      \begin{tikzpicture}[every node/.style={text width=2.6cm,
-                                             minimum height=1.3cm}]
-        \node (meas) [stage]   at (0,0)     {Mesures du laboratoire};
-        \node (ai)   [stageai] at (3.6,0)   {IA sur GPU GeForce, sur site};
-        \node (phys) [stage]   at (3.6,-2.4){Vérification physique};
-        \node (act)  [stagehi] at (0,-2.4)  {Consignes aux équipements};
-        \draw [arrow, primary] (meas) -- (ai);
-        \draw [arrow, primary] (ai)   -- (phys);
-        \draw [arrow, primary] (phys) -- (act);
-        \draw [arrow, primary] (act)  -- (meas);
-      \end{tikzpicture}
-    \end{column}
-    \begin{column}{0.46\textwidth}
-      \begin{itemize}
-        \item \textbf{Matériel grand public} : une carte graphique GeForce,
-              un coût d'entrée modeste
-        \item \textbf{Sur site} : le modèle tourne localement, les données ne
-              quittent pas le laboratoire
-        \item \textbf{En boucle fermée} : \todo{tâche de l'IA, équipements
-              pilotés, résultats}
-      \end{itemize}
-    \end{column}
-  \end{columns}
-
-  \vspace{1.2em}
-  Le même schéma, transposé chez un GRD, garde ses données chez lui.
-\end{frame}
+% --- Diapositive mise en commentaire (GeForce dans la boucle, \todo à compléter) ---
+% \begin{frame}{Au GridLab : une GeForce dans la boucle}
+%   \begin{columns}[c,onlytextwidth]
+%     \begin{column}{0.5\textwidth}
+%       \centering
+%       \begin{tikzpicture}[every node/.style={text width=2.6cm,
+%                                              minimum height=1.3cm}]
+%         \node (meas) [stage]   at (0,0)     {Mesures du laboratoire};
+%         \node (ai)   [stageai] at (3.6,0)   {IA sur GPU GeForce, sur site};
+%         \node (phys) [stage]   at (3.6,-2.4){Vérification physique};
+%         \node (act)  [stagehi] at (0,-2.4)  {Consignes aux équipements};
+%         \draw [arrow, primary] (meas) -- (ai);
+%         \draw [arrow, primary] (ai)   -- (phys);
+%         \draw [arrow, primary] (phys) -- (act);
+%         \draw [arrow, primary] (act)  -- (meas);
+%       \end{tikzpicture}
+%     \end{column}
+%     \begin{column}{0.46\textwidth}
+%       \begin{itemize}
+%         \item \textbf{Matériel grand public} : une carte graphique GeForce,
+%               un coût d'entrée modeste
+%         \item \textbf{Sur site} : le modèle tourne localement, les données ne
+%               quittent pas le laboratoire
+%         \item \textbf{En boucle fermée} : \todo{tâche de l'IA, équipements
+%               pilotés, résultats}
+%       \end{itemize}
+%     \end{column}
+%   \end{columns}
+%
+%   \vspace{1.2em}
+%   Le même schéma, transposé chez un GRD, garde ses données chez lui.
+% \end{frame}
 
 \def\closingnote{Questions ?}
 \closingslide[Merci de votre attention]

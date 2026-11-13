@@ -1,0 +1,49 @@
+{
+  "name": "sc1_2040_summer",
+  "sfoe": {
+    "key": "sc1_2040",
+    "year": 2040,
+    "description": "Scenario 1 - Reference (ZERO Base)",
+    "PV_national_MW": 24070,
+    "EV_national_thousands": 2940,
+    "population_national": 9970300,
+    "population_sion_sierre": 110103
+  },
+  "time": {
+    "step_min": 15,
+    "days": 1,
+    "yearly": {
+      "enabled": true,
+      "step_min": 60
+    }
+  },
+  "demand": {
+    "demand_factor": 0.22,
+    "model_file": "../data/demand_gmm.npz",
+    "seed_offset": 5675
+  },
+  "pv": {
+    "file": "../data/pv/pv_profiles_year.csv",
+    "series": "clearsky",
+    "season": "summer",
+    "scale": 1.0
+  },
+  "ev": {
+    "charger_kw": 11,
+    "arrival_h": {
+      "dist": "normal",
+      "mean": 18,
+      "std": 0.6,
+      "min": 17,
+      "max": 21
+    },
+    "energy_kwh": {
+      "dist": "normal",
+      "mean": 44,
+      "std": 0,
+      "min": 0,
+      "max": 100
+    },
+    "seed_offset": 1230
+  }
+}

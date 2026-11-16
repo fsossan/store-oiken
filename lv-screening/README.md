@@ -22,14 +22,14 @@ python3 -m pip install -r requirements.txt
 `../data/` holds everything a clone needs (grid export, node coordinates, MV
 tables); see `../data/README.md`. Scenarios are generated in
 `../injection-scenarios` (its README) and read from
-`../injection-scenarios/output/<name>/`.
+`../injection-scenarios/output/<name>/nl7/` (the LV-connection level).
 
 ## Commands
 
 ```bash
 python3 -m lvgrid explore                              # grid data explorer on http://127.0.0.1:8051 (Dash, read-only, 4 s to start)
 python3 -m lvgrid oneshot                              # sanity check of every network -> results/<stamp>_oneshot/
-python3 -m lvgrid screen --scenario sc1_2040           # screening with ../injection-scenarios/output/sc1_2040, 3 cases, 25 s
+python3 -m lvgrid screen --scenario sc1_2040           # screening with ../injection-scenarios/output/sc1_2040/nl7, 3 cases, 25 s
 python3 -m lvgrid screen --scenario sc1_2040 --networks @results/<oneshot run>   # only networks that passed the sanity check
 python3 -m lvgrid screen --scenario /path/to/generated/folder --networks 101,230
 python3 -m lvgrid dashboard results/<run>              # -> results/<run>/dashboard/index.html (+ one page per flagged network)
@@ -48,7 +48,7 @@ Nothing is overwritten unless you reuse `--out`.
 
 ```
 1. scenario configuration    ../injection-scenarios/scenarios/<name>/config.json
-2. scenario generation       ../injection-scenarios/output/<name>/   (allocation.csv, daily/, yearly/)   python generate_scenario.py generate <name>
+2. scenario generation       ../injection-scenarios/output/<name>/nl7/   (allocation.csv, daily/, yearly/)   python generate_scenario.py generate <name>
 3. LV screening              results/<run>/                           python -m lvgrid screen --scenario <name>
                                                                       -> dashboard, aggregate
 ```

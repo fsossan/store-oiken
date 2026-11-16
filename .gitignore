@@ -85,6 +85,24 @@ slprj/
 nul
 
 # ---------------------------------------------------------------------------
+# LaTeX build files (presentation/; the .tex source and the PDF stay tracked)
+# ---------------------------------------------------------------------------
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.nav
+*.run.xml
+*.snm
+*.synctex.gz
+*.toc
+*.vrb
+*.xdv
+presentation/*.out
+
+# ---------------------------------------------------------------------------
 # Editors, OS, AI assistants
 # ---------------------------------------------------------------------------
 .DS_Store

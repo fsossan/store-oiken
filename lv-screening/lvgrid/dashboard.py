@@ -169,7 +169,8 @@ def portfolio_page(summary: pd.DataFrame, run: dict, main_case: str, pages: dict
                 f"Scenario <b>{html.escape(str(run['scenario']))}</b> ({_sfoe_label(run['scenario_info'])}): "
                 f"PV {run['scenario_info']['pv_region_kwp'] / 1e3:,.0f} MWp"
                 + (f" and {run['scenario_info']['ev_region']:,} EVs" if "ev_region" in run["scenario_info"] else "")
-                + f" for Sion+Sierre ({run['scenario_info']['population_ratio']:.2%} of the national figures), "
+                + f" for Sion+Sierre ({run['scenario_info'].get('region_share', run['scenario_info']['population_ratio']):.2%} "
+                f"of the national figures), "
                 f"PV day {run['scenario_info']['pv_date']}, {run['n_days']} day(s) at {run['step_min']} min.")
              + f" Limits: {lim['v_min_pu']}–{lim['v_max_pu']} pu, line and transformer loading ≤ {lim['line_loading_max']:.0%}.</p>"]
 

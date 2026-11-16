@@ -1,0 +1,8 @@
+{
+  "_comment": "The region served by the LV portfolio of this folder. Residents per scenario year, used to scale national scenario figures to the region (same values as tech-selection/config/general_config.json).",
+  "name": "Sion+Sierre",
+  "population": {
+    "2030": 105042,
+    "2040": 110103
+  }
+}

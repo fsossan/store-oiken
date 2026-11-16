@@ -1,34 +1,39 @@
 #!/usr/bin/env python3
 """Scenario generation for the OIKEN LV portfolio.
 
-    python generate_scenario.py new sc1_2040 [--name my_case]   # scenarios/<name>/config.json from the SFOE table, then edit it
-    python generate_scenario.py generate my_case               # -> output/my_case/ (allocation, daily/, yearly/)
+    python generate_scenario.py new sc1_2040 [--name my_case]   # the scenario: scenarios/<name>/config.json from the SFOE table, then edit it
+    python generate_scenario.py generate my_case               # the scenario applied to the grid -> output/my_case/nl7/ (allocation, daily/, yearly/)
+    python generate_scenario.py generate my_case --level nl4   # the same at the HV/MV substations -> output/my_case/nl4/ (expected series)
     python generate_scenario.py fit-demand                     # once: fit and cache the household demand model
     python generate_scenario.py clearsky --tilt 30 --year 2025 # clear-sky PV profile for a location (pvlib)
     python generate_scenario.py dashboard                      # scenario browser of the outputs on http://127.0.0.1:8050
+
+scenario.ipynb does `new` and `generate` interactively, with a preview of the scenario before anything is written.
 """
 from __future__ import annotations
 
 import argparse
 import sys
 
-from scengen.config import SCENARIOS_DIR, load_config, resolve
+from scengen.config import DEFAULT_LEVEL, LEVELS, SCENARIOS_DIR, load_config, resolve
 
 
 def cmd_new(a):
-    from scengen.generate import new_scenario_config, write_scenario_config
+    from scengen.scenario import new_scenario, write_scenario
     cfg = load_config(a.config)
     name = a.name or a.sfoe
     if (SCENARIOS_DIR / name / "config.json").exists() and not a.force:
         raise SystemExit(f"{SCENARIOS_DIR / name / 'config.json'} exists; use --force to overwrite or --name for another folder")
-    path = write_scenario_config(new_scenario_config(cfg, a.sfoe, name))
+    path = write_scenario(new_scenario(cfg, a.sfoe, name))
     print(f"-> {path}  (edit it, then: python generate_scenario.py generate {name})")
 
 
 def cmd_generate(a):
-    from scengen.data import parse_ids
-    from scengen.generate import generate
-    generate(a.name, parse_ids(a.networks) if a.networks else None)
+    from scengen.grid import load_grid, parse_ids
+    from scengen.injections import prepare
+    from scengen.output import write
+    from scengen.scenario import load_scenario
+    write(prepare(load_grid(), load_scenario(a.name)), parse_ids(a.networks) if a.networks else None, level=a.level)
 
 
 def cmd_fit_demand(a):
@@ -51,15 +56,17 @@ def main(argv=None) -> int:
     common.add_argument("--config", help="settings file (default: injection-scenarios/config.json)")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
-    p = sub.add_parser("new", parents=[common], help="stage 1: write scenarios/<name>/config.json from an SFOE scenario")
+    p = sub.add_parser("new", parents=[common], help="write the scenario scenarios/<name>/config.json from an SFOE scenario and the defaults")
     p.add_argument("sfoe", help="SFOE key: sc1_2030, sc2_2030, sc3_2030, sc1_2040, sc2_2040, sc3_2040")
     p.add_argument("--name", help="scenario name (default: the SFOE key)")
     p.add_argument("--force", action="store_true", help="overwrite an existing config.json")
     p.set_defaults(func=cmd_new)
 
-    p = sub.add_parser("generate", parents=[common], help="stage 2: allocation + daily/yearly injections (CSV) -> output/<name>/")
+    p = sub.add_parser("generate", help="apply the scenario to the grid: allocation + daily/yearly injections (CSV) -> output/<name>/<level>/")
     p.add_argument("name", help="scenario name under scenarios/")
-    p.add_argument("--networks", help="id,id,... to generate a subset (tests); default all networks")
+    p.add_argument("--level", choices=LEVELS, default=DEFAULT_LEVEL,
+                   help="network level of the product: " + "; ".join(f"{k} = {v}" for k, v in LEVELS.items()) + f" (default {DEFAULT_LEVEL})")
+    p.add_argument("--networks", help="id,id,... to generate a subset (tests, level nl7 only); default all networks")
     p.set_defaults(func=cmd_generate)
 
     p = sub.add_parser("fit-demand", parents=[common], help="fit and cache the household demand model (needs the training .mat)")

@@ -1,13 +1,22 @@
-"""Helpers shared by the models: SFOE population scaling, the split of a regional total over the nodes, seasons."""
+"""Helpers shared by the models: national figures scaled to the region, the split of a regional total over the
+connections, seasons."""
 from __future__ import annotations
+
+from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
 
 
-def population_ratio(sfoe: dict) -> float:
-    """Sion+Sierre share of the national population (scales the national SFOE figures)."""
-    return sfoe["population_sion_sierre"] / sfoe["population_national"]
+@dataclass(frozen=True)
+class National:
+    """The national figures of the scenario (its `sfoe` block) and the region's share of them (by `sfoe.to_region`)."""
+    figures: dict
+    share: float
+
+    def to_region(self, key: str, unit: float = 1.0) -> float:
+        """The national figure `key`, in `unit`s, scaled to the region."""
+        return self.figures[key] * unit * self.share
 
 
 def largest_remainder(total: int, weights: np.ndarray) -> np.ndarray:
@@ -25,16 +34,24 @@ def largest_remainder(total: int, weights: np.ndarray) -> np.ndarray:
     return out
 
 
-def split_by_fuse(nodes: pd.DataFrame, total: float, integer: bool = False) -> np.ndarray:
-    """Share of each node in a regional total (port of the MATLAB allocate_PV_EV_SFOE): between networks in
-    proportion to their fuse-rated power (sum of plmax_kw), within a network in proportion to each node's;
-    nodes without a fuse rating get nothing. integer=True splits by largest remainder at both levels."""
-    per_net = nodes.groupby("network_id", sort=False)["plmax_kw"].sum()
+SPLITS = {                                             # split method -> the weight of each connection
+    "fuse": lambda c: c["plmax_kw"].to_numpy(float),    # its fuse-rated power (port of the MATLAB allocate_PV_EV_SFOE)
+    "connections": lambda c: np.ones(len(c)),           # the same for every connection
+}
+
+
+def split(connections: pd.DataFrame, total: float, by: str, integer: bool = False, where: str = "split") -> np.ndarray:
+    """Share of each connection in a regional total, by the split method `by` (a key of SPLITS): between networks in
+    proportion to the sum of their connections' weights, within a network in proportion to each connection's weight.
+    integer=True splits by largest remainder at both levels. `where` names the config key in errors."""
+    if by not in SPLITS:
+        raise ValueError(f"{where}: unknown split '{by}'; known: {', '.join(SPLITS)}")
+    w_all = SPLITS[by](connections)
+    per_net = pd.Series(w_all, index=connections.index).groupby(connections["network_id"], sort=False).sum()
     net_share = (pd.Series(largest_remainder(int(total), per_net.to_numpy()), index=per_net.index) if integer
                  else total * per_net / per_net.sum())
-    out = np.zeros(len(nodes), int if integer else float)
-    w_all = nodes["plmax_kw"].to_numpy()
-    for nid, idx in nodes.groupby("network_id", sort=False).indices.items():
+    out = np.zeros(len(connections), int if integer else float)
+    for nid, idx in connections.groupby("network_id", sort=False).indices.items():
         w = w_all[idx]
         active = w > 0
         if not active.any():
@@ -49,6 +66,7 @@ def split_by_fuse(nodes: pd.DataFrame, total: float, integer: bool = False) -> n
 SEASON_MONTHS = {
     "winter": (12, 1, 2), "spring": (3, 4, 5), "summer": (6, 7, 8), "autumn": (9, 10, 11), "all": tuple(range(1, 13)),
 }
+SEASONS = ("winter", "spring", "summer", "autumn")       # winter: December, January and February of the same year
 
 
 def season_mask(months: np.ndarray, season: str) -> np.ndarray:

@@ -95,7 +95,7 @@ def main(argv=None) -> int:
     p.set_defaults(func=cmd_oneshot)
 
     p = sp("screen", help="daily load flow of every network with a generated scenario's injections")
-    p.add_argument("--scenario", required=True, help="scenario name (../injection-scenarios/output/<name>) or a path to a generated folder")
+    p.add_argument("--scenario", required=True, help="scenario name (../injection-scenarios/output/<name>/nl7) or a path to a generated folder")
     p.add_argument("--networks", default="all", help="all | id,id,... | @<oneshot run folder> (its ok networks)")
     p.add_argument("--cases", help="comma list of cases, each a '+'-joined list of the scenario's streams, e.g. "
                                    "demand,demand+ev (default cumulative: demand,demand+pv,demand+pv+ev,...)")

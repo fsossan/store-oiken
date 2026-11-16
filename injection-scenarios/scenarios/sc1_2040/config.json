@@ -7,7 +7,7 @@
     "PV_national_MW": 24070,
     "EV_national_thousands": 2940,
     "population_national": 9970300,
-    "population_sion_sierre": 110103
+    "to_region": "population"
   },
   "time": {
     "step_min": 15,
@@ -18,17 +18,20 @@
     }
   },
   "demand": {
+    "_comment": "demand_factor: the nominal demand (P_max) of each connection as a share of its fuse-rated power, P_max = demand_factor x plmax_kw (column nominal_demand_kw of allocation.csv). The household day drawn for the connection is a shape between 0 and 1, so P_max is the peak the connection can reach, not the coincident peak of a network. 0.22 follows from the DSO planning value of 6 % for a network's peak (0.06 / 0.28, the smoothing over a network of median size), and is sanity-checked on the yearly energy against the households' and the households' + services' shares of Swiss consumption: README.md, 'Where demand_factor comes from'. To do: in the future it should be matched with smart-meter measurements of the connections instead of being a fixed share of the fuse rating.",
     "demand_factor": 0.22,
     "model_file": "../data/demand_gmm.npz",
     "seed_offset": 5675
   },
   "pv": {
+    "split": "fuse",
     "file": "../data/pv/pv_profiles_year.csv",
     "series": "clearsky",
     "season": "all",
     "scale": 1.0
   },
   "ev": {
+    "split": "fuse",
     "charger_kw": 11,
     "arrival_h": {
       "dist": "normal",
@@ -38,11 +41,12 @@
       "max": 21
     },
     "energy_kwh": {
-      "dist": "normal",
-      "mean": 44,
-      "std": 0,
-      "min": 0,
-      "max": 100
+      "dist": "gev",
+      "shape": 0.2,
+      "loc": 3.4,
+      "scale": 2.0,
+      "min": 0.5,
+      "max": 60
     },
     "seed_offset": 1230
   }

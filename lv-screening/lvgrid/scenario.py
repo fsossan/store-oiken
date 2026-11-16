@@ -2,7 +2,8 @@
 
     <folder>/scenario.json, allocation.csv, daily/<network_id>.csv  (see injection-scenarios/README.md)
 
-`--scenario NAME` resolves to ../injection-scenarios/output/NAME; a path works too.
+The screening reads the LV-connection level of a scenario (LEVEL, nl7): `--scenario NAME` resolves to
+../injection-scenarios/output/NAME/nl7; a path works too, to that folder or to output/NAME.
 """
 from __future__ import annotations
 
@@ -19,11 +20,15 @@ from .injections import DEFAULT_STREAMS, Injections, check_streams, default_case
 from .network import Network
 
 
+LEVEL = "nl7"                  # the network level the screening reads: LV connections
+
+
 def scenario_folder(name_or_path: str | Path) -> Path:
     p = Path(name_or_path)
-    if (p / "scenario.json").exists():
-        return p
-    return SCENARIO_OUTPUT / str(name_or_path)
+    for folder in (p, p / LEVEL):
+        if (folder / "scenario.json").exists():
+            return folder
+    return SCENARIO_OUTPUT / str(name_or_path) / LEVEL
 
 
 @dataclass
@@ -70,8 +75,8 @@ class Scenario:
         return zero_injections(np.arange(self.steps) * self.step_min / 60.0, net.n_nodes, self.streams)
 
     def provenance(self) -> dict:
-        keys = ("sfoe", "population_ratio", "pv_region_kwp", "ev_region", "pv_date", "pv_allocated_kwp", "ev_allocated",
-                "step_min", "days", "allocation_sha256", "config_sha256", "created")
+        keys = ("sfoe", "population_ratio", "to_region", "region_share", "pv_split", "ev_split", "pv_region_kwp", "ev_region",
+                "pv_date", "pv_allocated_kwp", "ev_allocated", "step_min", "days", "allocation_sha256", "config_sha256", "created")
         sha = hashlib.sha256((self.folder / "allocation.csv").read_bytes()).hexdigest()[:12]
         return {"name": self.name, "folder": str(self.folder), **{k: self.meta[k] for k in keys if k in self.meta},
                 "allocation_edited_after_generation": sha != self.meta.get("allocation_sha256")}

@@ -27,6 +27,14 @@ def net_of(portfolio, cfg, nid):
     return build_network(nid, lines, subs, cfg)
 
 
+def test_scenario_folder_resolves_the_level(test_scenario_folder):
+    """--scenario NAME and a path to output/NAME both reach the LV-connection level, output/NAME/nl7."""
+    from lvgrid.scenario import scenario_folder
+    assert test_scenario_folder.name == "nl7"
+    assert scenario_folder("_test_screening") == test_scenario_folder
+    assert scenario_folder(test_scenario_folder.parent) == test_scenario_folder == scenario_folder(test_scenario_folder)
+
+
 def test_network_matches_matlab_report(portfolio, cfg):
     net = net_of(portfolio, cfg, "LV_Grid_101")           # row of tech-selection's portfolio report
     assert net.n_nodes == 78 and (net.edge_type == 0).sum() == 76

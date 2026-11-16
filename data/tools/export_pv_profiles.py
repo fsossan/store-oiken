@@ -5,6 +5,8 @@ Same content, Python-readable: 15-min timestamps of the reference year with the
 normalised PV output (per unit of installed DC peak) for the ideal clear sky and
 for the PVGIS typical meteorological year, plus the irradiance / temperature
 reference columns. `generate_scenario.py clearsky` writes files of the same layout.
+
+    python3 data/tools/export_pv_profiles.py [path/to/pv_profiles_year.mat]
 """
 import json
 import sys

@@ -1,5 +1,5 @@
-"""Household demand (stream `demand`, load): demand_factor x each node's fuse-rated power (P and Q, constant
-power factor) times a synthetic household day.
+"""Household demand (stream `demand`, load): each connection's nominal demand (demand_factor x its fuse-rated
+power; Q at the power factor of the fuse rating) times a synthetic household day.
 
 Demand model (port of fit_load_gmm / sample_load_gmm, tech-selection): per
 household cluster, each house is normalised by its own maximum, the days are
@@ -10,15 +10,17 @@ a component, draw a residual day, undo the detrending. The fit is cached as an
 """
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
 from ..config import DATA_DIR, resolve
-from .common import season_mask
+from .common import National, season_mask
 
 NAME, SIGN = "demand", "load"
+REQUIRED, OPTIONAL, NATIONAL = ("demand_factor", "model_file", "seed_offset"), (), ()
 
 
 def fit_demand_model(dcfg: dict, verbose: bool = True) -> dict:
@@ -36,7 +38,7 @@ def fit_demand_model(dcfg: dict, verbose: bool = True) -> dict:
         days_file = DATA_DIR / "demand_train_days.csv"
         if not days_file.exists():
             raise FileNotFoundError(f"{days_file} is needed for weekday/season filters "
-                                    "(write it with injection-scenarios/tools/export_demand_train_days.m)")
+                                    "(write it with data/tools/export_demand_train_days.m)")
         dates = pd.to_datetime(pd.read_csv(days_file)["date"])
         if len(dates) != n_days:
             raise ValueError("demand_train_days.csv does not match the training data")
@@ -98,16 +100,16 @@ def load_demand_model(path: Path) -> dict:
         return {k: (z[k].item() if z[k].ndim == 0 else z[k]) for k in z.files}
 
 
-def sample_demand(model: dict, n_nodes: int, days, seed: int):
-    """Dimensionless day shapes [n_nodes x len(days) x S] and the cluster of each node.
+def sample_demand(model: dict, n: int, days, seed: int):
+    """Dimensionless day shapes [n x len(days) x S] of n connections and the cluster of each.
 
     `days` are calendar day indices (0..364). Clusters come from one generator
     seeded by (seed, 0) and each day from its own generator seeded by (seed,
     1 + day), so a given day is the same whatever other days are drawn."""
     K, S = int(model["n_clusters"]), int(model["steps_per_day"])
     days = [int(d) for d in days]
-    clusters = np.random.default_rng([seed, 0]).choice(K, size=n_nodes, p=model["cluster_prob"]) + 1
-    shape = np.zeros((n_nodes, len(days), S))
+    clusters = np.random.default_rng([seed, 0]).choice(K, size=n, p=model["cluster_prob"]) + 1
+    shape = np.zeros((n, len(days), S))
     members = {c: np.flatnonzero(clusters == c) for c in range(1, K + 1)}
     for j, d in enumerate(days):
         rng = np.random.default_rng([seed, 1 + d])
@@ -129,25 +131,59 @@ def sample_demand(model: dict, n_nodes: int, days, seed: int):
 
 
 # ------------------------------------------------------------- interface ----
-def allocate(nodes: pd.DataFrame, sfoe: dict, cfg: dict) -> dict:
-    """Nothing to allocate: demand scales with each node's fuse rating."""
-    return {}
+@dataclass(frozen=True)
+class DemandState:
+    model: dict                         # the fitted demand model (load_demand_model)
+    seed_offset: int
 
 
-def prepare(cfg: dict, step_min: int) -> dict:
+def allocate(connections: pd.DataFrame, cfg: dict, national: National) -> dict:
+    """nominal_demand_kw: the P_max of each connection, demand_factor x its fuse-rated power. Not a national figure,
+    so `national` is not used."""
+    # TODO: per-connection energy. With P_max = demand_factor x fuse-rated power the yearly energy is set by the fuse
+    # alone: demand_factor x fuse x ~1,040 h (mean shape 0.118 x 8760), i.e. ~5,700 kWh/yr for a 40 A connection at
+    # 0.22 (where 0.22 comes from: README.md). Set this column from each connection's own yearly energy instead
+    # (P_max = kWh/yr / (8760 x 0.118)): metered, from coffretIntroduction_COF.clientConsommationAnnuelCompteur_COF
+    # in the .bak (parse it like data/tools/extract_nodes_from_bak.py), or drawn from a distribution of yearly consumption.
+    connections["nominal_demand_kw"] = cfg["demand_factor"] * connections["plmax_kw"]
+    return {"demand_factor": cfg["demand_factor"]}
+
+
+def prepare(cfg: dict, step_min: int) -> DemandState:
     model = load_demand_model(resolve(cfg["model_file"]))
     if int(model["steps_per_day"]) != 24 * 60 // step_min:
         raise ValueError("demand model resolution differs from time.step_min")
-    return {"cfg": cfg, "model": model}
+    return DemandState(model, cfg["seed_offset"])
 
 
-def series(state: dict, rows: pd.DataFrame, days: list[int], net_num: int) -> dict[str, np.ndarray]:
-    cfg = state["cfg"]
-    # TODO: demand too low. The 6 % is already a coincident planning value but is used here as each household's own
-    # max, and independent sampling diversifies again: 1,550 kWh/yr and ~1 % of fuse power at the network peak for a
-    # 40 A connection. Scale per node on metered energy instead (ceiling = kWh/yr / (8760 x 0.118 mean shape)), from
-    # coffretIntroduction_COF.clientConsommationAnnuelCompteur_COF in the .bak (parse it like data/tools/extract_nodes_from_bak.py).
-    nominal = cfg["demand_factor"] * (rows["plmax_kw"].to_numpy() + 1j * rows["qlmax_kvar"].to_numpy())
-    shape, _ = sample_demand(state["model"], len(rows), days, net_num + cfg["seed_offset"])     # [n x D x S]
-    demand = shape * nominal[:, None, None]
-    return {"demand_kw": demand.real, "demand_kvar": demand.imag}
+def series(state: DemandState, connections: pd.DataFrame, days: list[int], net_num: int) -> dict[str, np.ndarray]:
+    p_max = connections["nominal_demand_kw"].to_numpy()
+    q_max = p_max * connections["qlmax_kvar"].to_numpy() / connections["plmax_kw"].to_numpy()     # at the power factor of the fuse rating
+    shape, _ = sample_demand(state.model, len(connections), days, net_num + state.seed_offset)      # [n x D x S]
+    return {"demand_kw": shape * p_max[:, None, None], "demand_kvar": shape * q_max[:, None, None]}
+
+
+def expected(state: DemandState, rows: pd.DataFrame, days: list[int], samples: int) -> dict[str, np.ndarray]:
+    """What `series` summed over many connections converges to (level nl4): each row's nominal demand (a sum over
+    connections) times the expected household day. Q is exact: P_max is proportional to the fuse rating, so the
+    row's Q_max is its summed qlmax_kvar scaled like its P_max. Every day is drawn from the same distribution, so
+    the expectation is one day shape, repeated."""
+    shape = expected_shape(state.model, samples, state.seed_offset)
+    p_max = rows["nominal_demand_kw"].to_numpy(float)
+    q_max = p_max * rows["qlmax_kvar"].to_numpy(float) / rows["plmax_kw"].to_numpy(float)
+    day = np.broadcast_to(shape, (len(days), len(shape)))[None]                                       # [1 x D x S]
+    return {"demand_kw": p_max[:, None, None] * day, "demand_kvar": q_max[:, None, None] * day}
+
+
+def expected_shape(model: dict, samples: int, seed: int) -> np.ndarray:
+    """The expected household day [S]: the mean of `samples` draws per cluster (sample_demand), weighted by the
+    cluster probabilities rather than by how many draws each cluster got."""
+    shape, clusters = sample_demand(model, samples, [0], seed)
+    prob = np.asarray(model["cluster_prob"], float)
+    means, weights = [], []
+    for c in range(1, int(model["n_clusters"]) + 1):
+        drawn = clusters == c
+        if drawn.any():
+            means.append(shape[drawn, 0].mean(axis=0))
+            weights.append(prob[c - 1])
+    return np.average(np.array(means), axis=0, weights=weights)

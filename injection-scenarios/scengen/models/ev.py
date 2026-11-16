@@ -1,15 +1,20 @@
-"""EV charging (stream `ev`, load): SFOE vehicles split over the nodes by fuse-rated power (integers); each vehicle
+"""EV charging (stream `ev`, load): SFOE vehicles scaled to the region (sfoe.to_region) and split over the connections
+(ev.split, models/common.SPLITS: by fuse-rated power or equally; integers); each vehicle
 charges once a day at charger_kw from a random arrival until a random energy is delivered (truncated normal or
 GEV), as step averages, cut at midnight; one generator per (network, day)."""
 from __future__ import annotations
+
+from collections.abc import Callable
+from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
 from scipy import stats
 
-from .common import population_ratio, split_by_fuse
+from .common import National, split
 
 NAME, SIGN = "ev", "load"
+REQUIRED, OPTIONAL, NATIONAL = ("split", "charger_kw", "arrival_h", "energy_kwh", "seed_offset"), (), ("EV_national_thousands",)
 
 
 def truncated_sampler(spec: dict):
@@ -54,7 +59,7 @@ def ev_samplers(ecfg: dict):
 
 def ev_node_profiles(ev_counts: np.ndarray, charger_kw: float, arrival, energy, step_min: int,
                      rng: np.random.Generator) -> np.ndarray:
-    """Charging power per node [n x S], 3-phase kW, as step averages: each vehicle
+    """Charging power per connection [n x S], 3-phase kW, as step averages: each vehicle
     arrives at a time drawn from `arrival` and charges at charger_kw until the
     energy drawn from `energy` is delivered; sessions are cut at midnight."""
     S = 24 * 60 // step_min
@@ -74,29 +79,45 @@ def ev_node_profiles(ev_counts: np.ndarray, charger_kw: float, arrival, energy, 
 
 
 # ------------------------------------------------------------- interface ----
-def allocate(nodes: pd.DataFrame, sfoe: dict, cfg: dict) -> dict:
-    total = int(round(sfoe["EV_national_thousands"] * 1e3 * population_ratio(sfoe)))
-    nodes["ev_count"] = split_by_fuse(nodes, total, integer=True)
-    return {"ev_region": total, "ev_allocated": int(nodes["ev_count"].sum())}
+@dataclass(frozen=True)
+class EVState:
+    charger_kw: float
+    step_min: int
+    seed_offset: int
+    arrival: Callable                   # (rng, n) -> n arrival times [h]
+    energy: Callable                    # (rng, n) -> n session energies [kWh]
 
 
-def prepare(cfg: dict, step_min: int) -> dict:
-    if "arrival_h" not in cfg or "energy_kwh" not in cfg:
-        raise KeyError("ev block in the format before 2026-10-13 (arrival_mean_h ..., duration_h): replace it with the ev "
-                       "block of scenario_defaults in config.json (arrival_h, energy_kwh; 44 kWh = the former 4 h x 11 kW)")
+def allocate(connections: pd.DataFrame, cfg: dict, national: National) -> dict:
+    """ev_count: the national fleet scaled to the region, split over the connections by `split` (integers)."""
+    total = int(round(national.to_region("EV_national_thousands", 1e3)))
+    connections["ev_count"] = split(connections, total, cfg["split"], integer=True, where="ev.split")
+    return {"ev_split": cfg["split"], "ev_region": total, "ev_allocated": int(connections["ev_count"].sum())}
+
+
+def prepare(cfg: dict, step_min: int) -> EVState:
     if not cfg["charger_kw"] > 0:
         raise ValueError("ev.charger_kw must be positive")
     arrival, energy = ev_samplers(cfg)
-    return {"cfg": cfg, "step_min": step_min, "arrival": arrival, "energy": energy}
+    return EVState(cfg["charger_kw"], step_min, cfg["seed_offset"], arrival, energy)
 
 
-def series(state: dict, rows: pd.DataFrame, days: list[int], net_num: int) -> dict[str, np.ndarray]:
-    cfg, step_min = state["cfg"], state["step_min"]
-    counts = rows["ev_count"].to_numpy()
-    out = np.zeros((len(rows), len(days), 24 * 60 // step_min))
+def series(state: EVState, connections: pd.DataFrame, days: list[int], net_num: int) -> dict[str, np.ndarray]:
+    counts = connections["ev_count"].to_numpy()
+    out = np.zeros((len(connections), len(days), 24 * 60 // state.step_min))
     has = np.flatnonzero(counts > 0)
     if len(has):
         for j, d in enumerate(days):
-            out[has, j] = ev_node_profiles(counts[has], cfg["charger_kw"], state["arrival"], state["energy"], step_min,
-                                           np.random.default_rng([net_num + cfg["seed_offset"], d]))
+            out[has, j] = ev_node_profiles(counts[has], state.charger_kw, state.arrival, state.energy, state.step_min,
+                                           np.random.default_rng([net_num + state.seed_offset, d]))
     return {"ev_kw": out}
+
+
+def expected(state: EVState, rows: pd.DataFrame, days: list[int], samples: int) -> dict[str, np.ndarray]:
+    """What `series` summed over many vehicles converges to (level nl4): each row's EV count times the expected
+    charging power of one vehicle, the mean of `samples` simulated sessions (same arrival and energy laws, cut at
+    midnight). Every day is drawn from the same laws, so the expectation is one day, repeated."""
+    one = ev_node_profiles(np.array([samples]), state.charger_kw, state.arrival, state.energy, state.step_min,
+                           np.random.default_rng([state.seed_offset, samples]))[0] / samples      # [S] kW per vehicle
+    day = np.broadcast_to(one, (len(days), len(one)))[None]                                          # [1 x D x S]
+    return {"ev_kw": rows["ev_count"].to_numpy(float)[:, None, None] * day}

@@ -7,7 +7,7 @@
     "PV_national_MW": 9770,
     "EV_national_thousands": 930,
     "population_national": 9462900,
-    "population_sion_sierre": 105042
+    "to_region": "population"
   },
   "time": {
     "step_min": 15,
@@ -23,12 +23,14 @@
     "seed_offset": 5675
   },
   "pv": {
+    "split": "fuse",
     "file": "../data/pv/pv_profiles_year.csv",
     "series": "clearsky",
     "season": "all",
     "scale": 1.0
   },
   "ev": {
+    "split": "fuse",
     "charger_kw": 11,
     "arrival_h": {
       "dist": "normal",
@@ -38,11 +40,12 @@
       "max": 21
     },
     "energy_kwh": {
-      "dist": "normal",
-      "mean": 44,
-      "std": 0,
-      "min": 0,
-      "max": 100
+      "dist": "gev",
+      "shape": 0.2,
+      "loc": 3.4,
+      "scale": 2.0,
+      "min": 0.5,
+      "max": 60
     },
     "seed_offset": 1230
   }

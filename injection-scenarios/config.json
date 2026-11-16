@@ -14,8 +14,27 @@
     "season": "all",
     "fit_seed": 1
   },
+  "demand_factor_basis": {
+    "_comment": "The basis of scenario_defaults.demand.demand_factor (reasoning: README.md, 'Where demand_factor comes from'). Read by demand_factor.ipynb and scenario.ipynb only, not by the generator. planning_peak: the DSO planning value, a network's peak as a share of its fuse-rated power; the rule divides it by the smoothing of the demand model (0.28 for a network of median size) to get demand_factor. ch_consumption_twh, share_households, share_services: for the sanity check only; Swiss final electricity consumption and the households' and the services' shares of it, which give a lower bound (households) and an upper bound (households + services) for the yearly energy of all connections. These three are still to be verified against the SFOE electricity statistics.",
+    "planning_peak": 0.06,
+    "ch_consumption_twh": 57.0,
+    "share_households": 0.35,
+    "share_services": 0.27
+  },
+  "pv_realistic": {
+    "_comment": "A realistic yearly capacity factor of PV, for the line 'PV at a capacity factor of ...' next to the PV of the profile in scenario.ipynb and in the scenario browser. Read by them only, not by the generator, which uses the profile of pv.series as it is. The profiles are ideal systems (south at 35 deg, no shading, no system losses; clearsky: no clouds): 2,470 kWh/kWp a year for clearsky (capacity factor 0.28), 1,475 for measured (PVGIS TMY, 0.17). The Swiss PV fleet averaged 954 +/- 36 kWh/kWp a year over 2013-2022 (Hostettler 2022, cited in Frontiers in Energy Research 2024, doi 10.3389/fenrg.2024.1372680), a capacity factor of 0.11. Sion is sunnier than the average, so 0.11 is the low end.",
+    "capacity_factor": 0.11
+  },
+  "nl4": {
+    "_comment": "Level nl4 (`generate <name> --level nl4`): the scenario at the HV/MV substations, the allocation summed per substation and each stream's expected series (scengen/substations.py). expectation_samples: the Monte Carlo size of the expected household day and of the expected charging of one vehicle (PV needs none). A method setting, not a scenario assumption: the scenario's own config.json is the same for every level.",
+    "expectation_samples": 100000
+  },
   "scenario_defaults": {
-    "_comment": "Copied into scenarios/<name>/config.json by `new-scenario`; edit there.",
+    "_comment": "Copied into scenarios/<name>/config.json by `new` (or by scenario.ipynb); edit there.",
+    "sfoe": {
+      "_comment": "Added to the SFOE figures of the chosen row of the sfoe table. to_region: how the national figures (PV, EV) are scaled to the region; 'population' = x the region's population in the scenario year (../data/lv_grids/region.json) / population_national.",
+      "to_region": "population"
+    },
     "time": {
       "step_min": 15,
       "days": 1,
@@ -25,73 +44,71 @@
       }
     },
     "demand": {
+      "_comment": "demand_factor: the nominal demand (P_max) of each connection as a share of its fuse-rated power; its basis: demand_factor_basis above.",
       "demand_factor": 0.22,
       "model_file": "../data/demand_gmm.npz",
       "seed_offset": 5675
     },
     "pv": {
+      "_comment": "split: how the regional PV capacity is split over the connections, between networks by the sum of the connections' weights and within a network by each connection's; 'fuse' = weight its fuse-rated power (plmax_kw; the MATLAB allocate_PV_EV_SFOE), 'connections' = the same for every connection.",
+      "split": "fuse",
       "file": "../data/pv/pv_profiles_year.csv",
       "series": "clearsky",
       "season": "all",
       "scale": 1.0
     },
     "ev": {
-      "_comment": "Every vehicle charges once a day at charger_kw from its arrival until its energy is delivered (cut at midnight). arrival_h [h] and energy_kwh [kWh] are truncated to [min, max] and are either {dist: normal, mean, std} (std 0 = fixed value) or {dist: gev, shape, loc, scale}; GEV shape = xi (> 0 heavy upper tail, 0 Gumbel), as k in MATLAB gevrnd (scipy genextreme c = -xi). Defaults = the former fixed 4 h x 11 kW sessions.",
+      "_comment": "split: how the regional fleet is split over the connections (integers), as pv.split: 'fuse' | 'connections'. Every vehicle charges once a day at charger_kw from its arrival until its energy is delivered (cut at midnight). arrival_h [h] and energy_kwh [kWh] are truncated to [min, max] and are either {dist: normal, mean, std} (std 0 = fixed value) or {dist: gev, shape, loc, scale}; GEV shape = xi (> 0 heavy upper tail, 0 Gumbel), as k in MATLAB gevrnd (scipy genextreme c = -xi). Default arrival = the former MATLAB model; default energy: mean 5.1 kWh/day (~25 km per car and day from the FSO mobility microcensus 2021 at ~0.2 kWh/km at the plug), median 4.2, p99 18.6 kWh, at most a 60 kWh battery; the former fixed 4 h x 11 kW sessions are {dist: normal, mean: 44, std: 0, min: 0, max: 100}.",
+      "split": "fuse",
       "charger_kw": 11,
       "arrival_h": {"dist": "normal", "mean": 18, "std": 0.6, "min": 17, "max": 21},
-      "energy_kwh": {"dist": "normal", "mean": 44, "std": 0, "min": 0, "max": 100},
+      "energy_kwh": {"dist": "gev", "shape": 0.2, "loc": 3.4, "scale": 2.0, "min": 0.5, "max": 60},
       "seed_offset": 1230
     }
   },
   "sfoe": {
-    "_comment": "SFOE Energy Perspectives 2050+ (PE2050+), Scenario-cadre 2030/2040. National PV and EV are scaled to Sion+Sierre by population.",
+    "_comment": "SFOE Energy Perspectives 2050+ (PE2050+), Scenario-cadre 2030/2040. National figures; scenario_defaults.sfoe.to_region says how PV and EV are scaled to the region.",
     "sc1_2030": {
       "year": 2030,
       "description": "Scenario 1 - Reference (ZERO Base)",
       "PV_national_MW": 9770,
       "EV_national_thousands": 930,
-      "population_national": 9462900,
-      "population_sion_sierre": 105042
+      "population_national": 9462900
     },
     "sc2_2030": {
       "year": 2030,
       "description": "Scenario 2 - Divergence (ZERO A)",
       "PV_national_MW": 7650,
       "EV_national_thousands": 980,
-      "population_national": 9462900,
-      "population_sion_sierre": 105042
+      "population_national": 9462900
     },
     "sc3_2030": {
       "year": 2030,
       "description": "Scenario 3 - Sector coupling (ZERO B)",
       "PV_national_MW": 12210,
       "EV_national_thousands": 870,
-      "population_national": 9462900,
-      "population_sion_sierre": 105042
+      "population_national": 9462900
     },
     "sc1_2040": {
       "year": 2040,
       "description": "Scenario 1 - Reference (ZERO Base)",
       "PV_national_MW": 24070,
       "EV_national_thousands": 2940,
-      "population_national": 9970300,
-      "population_sion_sierre": 110103
+      "population_national": 9970300
     },
     "sc2_2040": {
       "year": 2040,
       "description": "Scenario 2 - Divergence (ZERO A)",
       "PV_national_MW": 10100,
       "EV_national_thousands": 3230,
-      "population_national": 9970300,
-      "population_sion_sierre": 110103
+      "population_national": 9970300
     },
     "sc3_2040": {
       "year": 2040,
       "description": "Scenario 3 - Sector coupling (ZERO B)",
       "PV_national_MW": 30090,
       "EV_national_thousands": 2520,
-      "population_national": 9970300,
-      "population_sion_sierre": 110103
+      "population_national": 9970300
     }
   }
 }
